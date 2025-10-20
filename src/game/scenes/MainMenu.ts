@@ -1,6 +1,7 @@
 import { GameObjects, Scene } from 'phaser';
 
 import { EventBus } from '../EventBus';
+import { Sfx } from '../audio/Sfx';
 
 export class MainMenu extends Scene
 {
@@ -18,13 +19,33 @@ export class MainMenu extends Scene
     {
         this.background = this.add.image(512, 384, 'background');
 
-        this.logo = this.add.image(512, 300, 'logo').setDepth(100);
+        this.logo = this.add.image(512, 200, 'logo').setDepth(100);
 
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
+        this.title = this.add.text(512, 350, 'Aventura de Plataformas', {
+            fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
+
+        // Instrucciones del juego
+        this.add.text(512, 450, 'Usa las flechas para moverte\nFlecha arriba o Espacio para saltar\nRecoge todas las monedas\nEvita los enemigos rojos', {
+            fontFamily: 'Arial', fontSize: 24, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Botón para iniciar
+        this.add.text(512, 600, 'Haz clic para jugar', {
+            fontFamily: 'Arial Black', fontSize: 32, color: '#ffff00',
+            stroke: '#000000', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Hacer la pantalla clickeable para iniciar el juego
+        this.input.once('pointerdown', () => {
+            Sfx.click(this);
+            this.changeScene();
+        });
 
         EventBus.emit('current-scene-ready', this);
     }
