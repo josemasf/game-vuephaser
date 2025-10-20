@@ -10,16 +10,21 @@ Un emocionante juego de plataformas 2D desarrollado con **Phaser.js**, **Vue.js*
 
 - **←** y **→**: Mover izquierda y derecha
 - **↑**: Saltar
-- **Ratón**: Hacer clic para navegar por los menús
+- **Ratón**: Hacer clic para navegar por los menús y seleccionar personaje
 
 ## 🎮 Mecánicas del Juego
 
 ### Elementos del Juego
 
-- **Jugador (Cuadrado Azul)**: Tu personaje principal
+- **Jugador**: Elige entre 3 héroes con ventajas únicas:
+  - **Velocidad**: Más rápido, menos vidas (2)
+  - **Salto**: Salto más alto, equilibrio general (3 vidas)
+  - **Tanque**: Más vidas (4), menor velocidad
 - **Plataformas (Marrón)**: Superficies sobre las que puedes caminar y saltar
 - **Monedas (Doradas)**: Recógelas todas para ganar (10 puntos cada una)
 - **Enemigos (Rojos)**: Evítalos o perderás una vida
+ - **Puertas**: Tras completar un nivel, aparecen 2 puertas; cada una lleva a un siguiente nivel diferente (ramificación)
+ - **Jefe Final**: En el tercer nivel, aparece un jefe con poderes (proyectiles y teletransporte)
 
 ### Sistema de Puntuación
 
@@ -40,6 +45,10 @@ Un emocionante juego de plataformas 2D desarrollado con **Phaser.js**, **Vue.js*
 - **Enemigos con IA simple**: Se mueven de forma automática
 - **Interfaz informativa**: Muestra puntuación y vidas en tiempo real
 - **Responsive design**: Se adapta a diferentes tamaños de pantalla
+- **Estética pixel art**: Renderizado nítido sin suavizado
+- **Selección de personaje**: 3 héroes con habilidades propias (Velocidad, Salto, Tanque)
+- **Persistencia de selección**: El personaje elegido se recuerda entre sesiones
+ - **Pantalla de selección dedicada**: Vista con descripción y confirmación del héroe
 
 ## 🚀 Tecnologías Utilizadas
 
@@ -75,13 +84,19 @@ pnpm build
 
 ## 🎯 Próximas Mejoras
 
-- [ ] Múltiples niveles
+- [x] Múltiples niveles (3) con jefe final
 - [x] Power-ups especiales
 - [x] Efectos de sonido
-- [ ] Animaciones de sprites
+- [x] Animaciones de sprites
 - [ ] Sistema de puntuaciones altas
 - [ ] Enemigos con patrones más complejos
 - [ ] Plataformas móviles
+ - [ ] Música de fondo y control de volumen
+ - [ ] Indicador/temporizador de power-ups en HUD
+ - [ ] Soporte gamepad y controles táctiles
+ - [ ] Transiciones de escena (fade/zoom) y efectos de cámara
+ - [ ] Sistema de niveles con mapas (Tiled) y tileset pixel art
+ - [ ] Menú de pausa con reinicio rápido
 
 ## 🎮 Tips para Jugar
 

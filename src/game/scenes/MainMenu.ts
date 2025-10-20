@@ -1,5 +1,4 @@
 import { GameObjects, Scene } from 'phaser';
-
 import { EventBus } from '../EventBus';
 import { Sfx } from '../audio/Sfx';
 
@@ -9,6 +8,7 @@ export class MainMenu extends Scene
     logo: GameObjects.Image;
     title: GameObjects.Text;
     logoTween: Phaser.Tweens.Tween | null;
+    // Pantalla principal limpia, selección se mueve a CharacterSelect
 
     constructor ()
     {
@@ -34,8 +34,8 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
 
-        // Botón para iniciar
-        this.add.text(512, 600, 'Haz clic para jugar', {
+        // Botón para ir al selector de personajes
+        this.add.text(512, 620, 'Haz clic para elegir personaje', {
             fontFamily: 'Arial Black', fontSize: 32, color: '#ffff00',
             stroke: '#000000', strokeThickness: 6,
             align: 'center'
@@ -57,8 +57,7 @@ export class MainMenu extends Scene
             this.logoTween.stop();
             this.logoTween = null;
         }
-
-        this.scene.start('Game');
+        this.scene.start('CharacterSelect');
     }
 
     moveLogo (vueCallback: ({ x, y }: { x: number, y: number }) => void)
@@ -94,4 +93,6 @@ export class MainMenu extends Scene
             });
         }
     }
+
+    // Selección movida a CharacterSelect
 }

@@ -42,6 +42,7 @@ export class Preloader extends Scene
         this.createCoinSprite();
         this.createPowerUpSprites();
         this.createHeroSprites();
+        this.createDoorAndBossSprites();
     }
 
     createPlayerSprite()
@@ -114,9 +115,37 @@ export class Preloader extends Scene
         g.destroy();
     }
 
+    createDoorAndBossSprites()
+    {
+        // Puerta (marrón con marco claro)
+        let g = this.add.graphics();
+        g.fillStyle(0x8B4513);
+        g.fillRect(0, 0, 32, 48);
+        g.lineStyle(3, 0xdeb887);
+        g.strokeRect(0, 0, 32, 48);
+        g.fillStyle(0x3e2723); g.fillRect(10, 20, 12, 12); // pomo
+        g.generateTexture('door', 32, 48);
+        g.destroy();
+
+        // Proyectil (orbe morado)
+        g = this.add.graphics();
+        g.fillStyle(0x8e44ad); g.fillCircle(6, 6, 6);
+        g.lineStyle(2, 0xffffff); g.strokeCircle(6, 6, 6);
+        g.generateTexture('projectile', 12, 12);
+        g.destroy();
+
+        // Jefe (enemigo grande)
+        g = this.add.graphics();
+        g.fillStyle(0xc0392b);
+        g.fillCircle(32, 32, 32);
+        g.lineStyle(4, 0x000000); g.strokeCircle(32, 32, 32);
+        g.generateTexture('boss', 64, 64);
+        g.destroy();
+    }
+
     createHeroSprites()
     {
-        // Héroe: Velocidad (azul)
+        // Héroe: Velocidad (azul) - base
         let g = this.add.graphics();
         g.fillStyle(0x1e90ff);
         g.fillRect(4, 8, 24, 20);
@@ -127,35 +156,93 @@ export class Preloader extends Scene
         g.generateTexture('hero_speed', 32, 32);
         g.destroy();
 
-        // Héroe: Salto (verde)
+        // También generamos 2 frames para animación de caminar y 1 para salto
+        // speed_1
         g = this.add.graphics();
-        g.fillStyle(0x2ecc71);
-        g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x1b8f4d);
-        g.fillRect(2, 12, 4, 12);
-        g.fillStyle(0xffffcc);
-        g.fillRect(10, 10, 6, 4);
-        g.generateTexture('hero_jump', 32, 32);
-        g.destroy();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(4, 20, 24, 8);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_1', 32, 32); g.destroy();
+        // speed_2 (pierna adelantada)
+        g = this.add.graphics();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(6, 20, 20, 8);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_2', 32, 32); g.destroy();
+        // speed_jump
+        g = this.add.graphics();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(10, 24, 12, 6);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_jump', 32, 32); g.destroy();
 
-        // Héroe: Tanque (rojo)
+        // Héroe: Salto (verde) - base
         g = this.add.graphics();
-        g.fillStyle(0xe74c3c);
-        g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0xb03a2e);
-        g.fillRect(4, 8, 24, 6);
-        g.fillStyle(0xeeeeee);
-        g.fillRect(12, 12, 8, 4);
-        g.generateTexture('hero_tank', 32, 32);
-        g.destroy();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump', 32, 32); g.destroy();
+        // jump_1
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_1', 32, 32); g.destroy();
+        // jump_2 (paso alterno)
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(3, 14, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_2', 32, 32); g.destroy();
+        // jump_jump
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 10, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_jump', 32, 32); g.destroy();
+
+        // Héroe: Tanque (rojo) - base
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank', 32, 32); g.destroy();
+        // tank_1
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_1', 32, 32); g.destroy();
+        // tank_2 (paso alterno)
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(5, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_2', 32, 32); g.destroy();
+        // tank_jump
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 6, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_jump', 32, 32); g.destroy();
     }
 
     create ()
     {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
+        // Definir animaciones globales de caminar para cada héroe
+        this.anims.create({ key: 'walk_speed', frames: [
+            { key: 'hero_speed_1' }, { key: 'hero_speed_2' }
+        ], frameRate: 8, repeat: -1 });
 
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
+        this.anims.create({ key: 'walk_jump', frames: [
+            { key: 'hero_jump_1' }, { key: 'hero_jump_2' }
+        ], frameRate: 8, repeat: -1 });
+
+        this.anims.create({ key: 'walk_tank', frames: [
+            { key: 'hero_tank_1' }, { key: 'hero_tank_2' }
+        ], frameRate: 6, repeat: -1 });
+
+        //  Mover al menú principal
         this.scene.start('MainMenu');
     }
 }
