@@ -13,8 +13,8 @@ export class Sfx {
   ) {
     // Use Phaser WebAudio context when available
     // @ts-expect-error Phaser typing for sound.context exists at runtime
-    const ctx: AudioContext | undefined = scene.sound?.context;
-    if (!ctx) return; // HTML5Audio fallback: skip
+    const ctx: AudioContext | undefined = scene.sound?.context as any;
+    if (!ctx || (ctx as any).state === 'closed') return; // Fallback: skip when no WebAudio or closed
 
     const t0 = ctx.currentTime;
     const osc = ctx.createOscillator();

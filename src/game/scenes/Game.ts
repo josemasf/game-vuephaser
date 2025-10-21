@@ -48,6 +48,16 @@ export class Game extends Scene
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87CEEB); // Azul cielo
 
+        // Reset de estado de nivel al (re)entrar
+        this.gameWon = false;
+        this.levelComplete = false;
+        this.invincible = false;
+        if (this.doors) { try { this.doors.destroy(true); } catch {} this.doors = undefined as any; }
+        if (this.shootTimer) { this.shootTimer.remove(false); this.shootTimer = undefined; }
+        if (this.teleportTimer) { this.teleportTimer.remove(false); this.teleportTimer = undefined; }
+        if (this.projectiles) { try { this.projectiles.destroy(true); } catch {} this.projectiles = undefined; }
+        if (this.boss) { try { this.boss.destroy(); } catch {} this.boss = undefined; }
+
         // Selección de héroe
         const sel = this.registry.get('selectedHero');
         if (sel && typeof sel === 'string') {
@@ -335,7 +345,7 @@ export class Game extends Scene
             this.resetPlayerPosition();
         }
         
-        // Verificar victoria
+        // Verificar victoria (nunca más de una vez)
         if (this.coins.countActive(true) === 0 && !this.gameWon)
         {
             this.gameWon = true;
@@ -360,7 +370,8 @@ export class Game extends Scene
                 this.invincible = true;
                 Sfx.win(this);
                 this.add.text(512, 120, 'Elige una puerta', { fontSize: '40px', color: '#ffff00', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
-                this.spawnDoors();
+                // Retrasar un frame para asegurar que colisionadores/plataformas estén listos
+                this.time.delayedCall(50, () => this.spawnDoors());
             }
         }
     }
@@ -561,12 +572,35 @@ export class Game extends Scene
     }
 
     private spawnDoors() {
-        if (this.levelComplete) return;
+        // Evitar duplicados si ya existen
+        if (this.doors && this.doors.getChildren().length > 0) return;
         this.doors = this.physics.add.staticGroup();
-        const doorA = this.doors.create(300, 120, 'door');
-        const doorB = this.doors.create(740, 120, 'door');
+        const xA = 300, xB = 740;
+        // Posición fija y visible para evitar dependencias de layout
+        const y = 420;
+        const doorA = this.doors.create(xA, y, 'door') as Phaser.Physics.Arcade.Image;
+        const doorB = this.doors.create(xB, y, 'door') as Phaser.Physics.Arcade.Image;
+        doorA.setDepth(80);
+        doorB.setDepth(80);
+        // Pequeño brillo para destacarlas
+        this.tweens.add({ targets: [doorA, doorB], alpha: 0.6, yoyo: true, repeat: -1, duration: 600 });
         this.physics.add.overlap(this.player, doorA, () => this.enterDoor('A'));
         this.physics.add.overlap(this.player, doorB, () => this.enterDoor('B'));
+    }
+
+    private getDoorYForX(x: number): number {
+        let y = 600;
+        this.platforms.children.iterate((obj: any) => {
+            const plat = obj as Phaser.GameObjects.GameObject & { x: number; y: number; displayWidth: number; displayHeight: number };
+            if (!plat) return;
+            const halfW = plat.displayWidth / 2;
+            if (x >= plat.x - halfW && x <= plat.x + halfW) {
+                const top = plat.y - plat.displayHeight / 2;
+                const candidate = top - 24;
+                if (candidate < y) y = candidate;
+            }
+        });
+        return y;
     }
 
     private enterDoor(choice: 'A' | 'B') {
