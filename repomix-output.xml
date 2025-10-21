@@ -1,0 +1,2339 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.editorconfig
+.gitignore
+AGENTS.md
+env.d.ts
+index.html
+JUEGO_PLATAFORMAS.md
+LICENSE
+log.js
+package.json
+public/style.css
+README.md
+src/App.vue
+src/game/audio/Sfx.ts
+src/game/EventBus.ts
+src/game/main.ts
+src/game/scenes/Boot.ts
+src/game/scenes/CharacterSelect.ts
+src/game/scenes/Game.ts
+src/game/scenes/GameOver.ts
+src/game/scenes/MainMenu.ts
+src/game/scenes/Preloader.ts
+src/main.ts
+src/PhaserGame.vue
+src/vite-env.d.ts
+tsconfig.json
+tsconfig.node.json
+vite/config.dev.mjs
+vite/config.prod.mjs
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".editorconfig">
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+/cypress/videos/
+/cypress/screenshots/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
+</file>
+
+<file path="AGENTS.md">
+# Repository Guidelines
+
+## Project Structure & Module Organization
+- `src/` — Vue + TypeScript app code. Entry: `src/main.ts` and root `src/App.vue`.
+- `src/game/` — Phaser game code. Scenes in `src/game/scenes/` (e.g., `Game.ts`, `MainMenu.ts`), shared utilities like `EventBus.ts`, game entry `src/game/main.ts`.
+- `public/` — Static assets (images under `public/assets/`) and global styles (`public/style.css`).
+- `vite/` — Vite configs: `vite/config.dev.mjs` and `vite/config.prod.mjs`.
+- Root — `index.html`, configs, lockfiles.
+
+## Build, Test, and Development Commands
+- `npm install` — Install dependencies (Node 18+ recommended).
+- `npm run dev` — Start Vite dev server on port 8080 (logs a build ping via `log.js`).
+- `npm run dev-nolog` — Start dev server without network logging.
+- `npm run build` — Production build using `vite/config.prod.mjs` (minified, vendor chunk for Phaser).
+- `npm run build-nolog` — Production build without network logging.
+- `npm run typecheck` — Static type check via `vue-tsc`.
+- You may use `pnpm` if preferred (a `pnpm-lock.yaml` exists): e.g., `pnpm dev`.
+
+## Coding Style & Naming Conventions
+- TypeScript: strict mode enabled in `tsconfig.json` — fix `noUnused*` and related errors.
+- Indentation: 2 spaces; semicolons required; single quotes preferred in TS.
+- Vue SFCs: PascalCase filenames (e.g., `PhaserGame.vue`), `<script setup lang="ts">` when possible.
+- Phaser scenes and classes: PascalCase filenames and class names (one class per file).
+- Imports: prefer `@/...` alias for paths under `src/`.
+
+## Testing Guidelines
+- No automated test runner currently. Validate changes by:
+  - Running the dev server and exercising scenes and UI.
+  - Running `npx vue-tsc --noEmit` for static checks.
+  - Optional: add lightweight unit tests before large refactors.
+
+## Commit & Pull Request Guidelines
+- Commits: use meaningful messages. Conventional Commits are encouraged: `feat:`, `fix:`, `chore:`, `docs:`.
+- PRs: include a clear summary, steps to run/verify, screenshots or GIFs of gameplay, and link issues.
+- Assets: include only licensed media in `public/assets/` and credit as needed.
+
+## Security & Configuration Tips
+- `log.js` makes an external HTTPS request during `dev`/`build`. Use `*-nolog` scripts if offline or avoiding telemetry.
+- Do not commit secrets. Prefer environment-driven config via Vite when needed.
+ - Recommended Node: 18 or newer (`"engines": { "node": ">=18" }`).
+</file>
+
+<file path="log.js">
+const fs = require('fs');
+const https = require('https');
+
+const main = async () => {
+    const args = process.argv.slice(2);
+    const packageData = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+    const event = args[0] || 'unknown';
+    const phaserVersion = packageData.dependencies.phaser;
+
+    const options = {
+        hostname: 'gryzor.co',
+        port: 443,
+        path: `/v/${event}/${phaserVersion}/${packageData.name}`,
+        method: 'GET'
+    };
+
+    try {
+        const req = https.request(options, (res) => {
+            res.on('data', () => {});
+            res.on('end', () => {
+                process.exit(0);
+            });
+        });
+
+        req.on('error', (error) => {
+            process.exit(1);
+        });
+
+        req.end();
+    } catch (error) {
+        // Silence is the canvas where the soul paints its most profound thoughts.
+        process.exit(1);
+    }
+}
+
+main();
+</file>
+
+<file path="src/game/scenes/Boot.ts">
+import { Scene } from 'phaser';
+
+export class Boot extends Scene
+{
+    constructor ()
+    {
+        super('Boot');
+    }
+
+    preload ()
+    {
+        //  The Boot Scene is typically used to load in any assets you require for your Preloader, such as a game logo or background.
+        //  The smaller the file size of the assets, the better, as the Boot Scene itself has no preloader.
+
+        this.load.image('background', 'assets/bg.png');
+    }
+
+    create ()
+    {
+        this.scene.start('Preloader');
+    }
+}
+</file>
+
+<file path="src/game/scenes/CharacterSelect.ts">
+import { Scene, GameObjects } from 'phaser';
+import { EventBus } from '../EventBus';
+import { Sfx } from '../audio/Sfx';
+
+type HeroKey = 'hero_speed' | 'hero_jump' | 'hero_tank';
+
+export class CharacterSelect extends Scene {
+  background!: GameObjects.Image;
+  title!: GameObjects.Text;
+  selected: HeroKey = 'hero_jump';
+  frames: Phaser.GameObjects.Rectangle[] = [];
+  imgs: Phaser.GameObjects.Image[] = [];
+  info!: Phaser.GameObjects.Text;
+  confirmBtn!: Phaser.GameObjects.Text;
+  backBtn!: Phaser.GameObjects.Text;
+
+  constructor() {
+    super('CharacterSelect');
+  }
+
+  create() {
+    this.background = this.add.image(512, 384, 'background');
+
+    this.title = this.add.text(512, 120, 'Selecciona tu héroe', {
+      fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
+      stroke: '#000000', strokeThickness: 8, align: 'center'
+    }).setOrigin(0.5).setDepth(100);
+
+    try {
+      const saved = window.localStorage.getItem('selectedHero') as HeroKey | null;
+      if (saved) this.selected = saved;
+    } catch {}
+
+    this.layoutHeroes();
+    this.updateInfo();
+
+    this.confirmBtn = this.add.text(512, 650, 'Confirmar', {
+      fontFamily: 'Arial Black', fontSize: 36, color: '#00ff00', stroke: '#000000', strokeThickness: 6
+    }).setOrigin(0.5).setDepth(100).setInteractive({ useHandCursor: true });
+    this.confirmBtn.on('pointerdown', () => {
+      Sfx.click(this);
+      this.registry.set('selectedHero', this.selected);
+      // Reset de progreso de niveles al iniciar una nueva partida
+      this.registry.set('levelIndex', 1);
+      this.registry.set('path', '');
+      this.registry.set('carryScore', 0);
+      this.registry.set('carryLives', undefined);
+      try { window.localStorage.setItem('selectedHero', this.selected); } catch {}
+      this.scene.start('Game');
+    });
+
+    this.backBtn = this.add.text(100, 720, '← Volver', {
+      fontFamily: 'Arial', fontSize: 24, color: '#ffff00', stroke: '#000000', strokeThickness: 4
+    }).setOrigin(0, 1).setDepth(100).setInteractive({ useHandCursor: true });
+    this.backBtn.on('pointerdown', () => {
+      Sfx.click(this);
+      this.scene.start('MainMenu');
+    });
+
+    EventBus.emit('current-scene-ready', this);
+  }
+
+  private layoutHeroes() {
+    const defs: { key: HeroKey; label: string }[] = [
+      { key: 'hero_speed', label: 'Velocidad' },
+      { key: 'hero_jump', label: 'Salto' },
+      { key: 'hero_tank', label: 'Tanque' }
+    ];
+    const startX = 260;
+    const y = 360;
+    const gap = 260;
+
+    defs.forEach((h, i) => {
+      const x = startX + i * gap;
+      const frame = this.add.rectangle(x, y, 120, 120).setStrokeStyle(6, 0xffffff).setDepth(90);
+      const img = this.add.image(x, y - 10, `${h.key}_1`).setScale(3).setInteractive({ useHandCursor: true }).setDepth(100);
+      this.add.text(x, y + 70, h.label, { fontFamily: 'Arial Black', fontSize: 22, color: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
+
+      img.on('pointerdown', () => {
+        Sfx.click(this);
+        this.selected = h.key;
+        try { window.localStorage.setItem('selectedHero', this.selected); } catch {}
+        this.updateFrames();
+        this.updateInfo();
+      });
+
+      this.frames.push(frame);
+      this.imgs.push(img);
+    });
+
+    this.updateFrames();
+  }
+
+  private updateFrames() {
+    const order: HeroKey[] = ['hero_speed', 'hero_jump', 'hero_tank'];
+    this.frames.forEach((f, idx) => {
+      const active = order[idx] === this.selected;
+      f.setStrokeStyle(6, active ? 0xffff00 : 0xffffff);
+    });
+  }
+
+  private updateInfo() {
+    const map: Record<HeroKey, { name: string; desc: string; stats: string }> = {
+      hero_speed: {
+        name: 'Velocidad',
+        desc: 'Se mueve más rápido, pero con menos vidas.',
+        stats: 'Velocidad: Alta | Salto: Medio | Vidas: 2'
+      },
+      hero_jump: {
+        name: 'Salto',
+        desc: 'Mayor altura de salto y balance general.',
+        stats: 'Velocidad: Media | Salto: Alto | Vidas: 3'
+      },
+      hero_tank: {
+        name: 'Tanque',
+        desc: 'Más resistencia con más vidas, menor velocidad.',
+        stats: 'Velocidad: Baja | Salto: Medio | Vidas: 4'
+      }
+    };
+    const i = map[this.selected];
+    if (!this.info) {
+      this.info = this.add.text(512, 500, `${i.name}\n${i.desc}\n${i.stats}`, {
+        fontFamily: 'Arial', fontSize: 22, color: '#ffffff', stroke: '#000000', strokeThickness: 4, align: 'center'
+      }).setOrigin(0.5).setDepth(100);
+    } else {
+      this.info.setText(`${i.name}\n${i.desc}\n${i.stats}`);
+    }
+  }
+}
+</file>
+
+<file path="src/PhaserGame.vue">
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue';
+import { EventBus } from './game/EventBus';
+import StartGame from './game/main';
+import Phaser from 'phaser';
+
+// Save the current scene instance
+const scene = ref();
+const game = ref();
+
+const emit = defineEmits(['current-active-scene']);
+
+onMounted(() => {
+
+    game.value = StartGame('game-container');
+    
+    EventBus.on('current-scene-ready', (scene_instance: Phaser.Scene) => {
+        
+        emit('current-active-scene', scene_instance);
+    
+        scene.value = scene_instance;
+    
+    });
+
+});
+
+onUnmounted(() => {
+
+    if (game.value)
+    {
+        game.value.destroy(true);
+        game.value = null;
+    }
+
+});
+
+defineExpose({ scene, game });
+
+</script>
+
+<template>
+    <div id="game-container"></div>
+</template>
+</file>
+
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/style.css">
+    <title>Phaser Vue Template</title>
+</head>
+
+<body>
+    <div id="app">
+        <div id="game-container"></div>
+    </div>
+    <script type="module" src="src/main.ts"></script>
+</body>
+</html>
+</file>
+
+<file path="JUEGO_PLATAFORMAS.md">
+# 🎮 Juego de Plataformas 2D
+
+Un emocionante juego de plataformas 2D desarrollado con **Phaser.js**, **Vue.js** y **TypeScript**.
+
+## 🎯 Objetivo del Juego
+
+¡Recoge todas las monedas doradas mientras evitas a los enemigos rojos! Llega a la cima del nivel para ganar.
+
+## 🕹️ Controles
+
+- **←** y **→**: Mover izquierda y derecha
+- **↑**: Saltar
+- **Ratón**: Hacer clic para navegar por los menús y seleccionar personaje
+
+## 🎮 Mecánicas del Juego
+
+### Elementos del Juego
+
+- **Jugador**: Elige entre 3 héroes con ventajas únicas:
+  - **Velocidad**: Más rápido, menos vidas (2)
+  - **Salto**: Salto más alto, equilibrio general (3 vidas)
+  - **Tanque**: Más vidas (4), menor velocidad
+- **Plataformas (Marrón)**: Superficies sobre las que puedes caminar y saltar
+- **Monedas (Doradas)**: Recógelas todas para ganar (10 puntos cada una)
+- **Enemigos (Rojos)**: Evítalos o perderás una vida
+ - **Puertas**: Tras completar un nivel, aparecen 2 puertas; cada una lleva a un siguiente nivel diferente (ramificación)
+ - **Jefe Final**: En el tercer nivel, aparece un jefe con poderes (proyectiles y teletransporte)
+
+### Sistema de Puntuación
+
+- **Moneda recogida**: +10 puntos
+- **Completar nivel**: +100 puntos de bonus
+- **Vidas**: Empiezas con 3 vidas
+
+### Condiciones de Victoria/Derrota
+
+- **Victoria**: Recoge todas las 8 monedas doradas
+- **Derrota**: Pierde todas las vidas (3) tocando enemigos o cayendo
+- **Reinicio**: Si caes del mapa, regresas al punto de inicio
+
+## 🎨 Características
+
+- **Sprites procedurales**: Todos los sprites se generan mediante código
+- **Física realista**: Sistema de gravedad y colisiones
+- **Enemigos con IA simple**: Se mueven de forma automática
+- **Interfaz informativa**: Muestra puntuación y vidas en tiempo real
+- **Responsive design**: Se adapta a diferentes tamaños de pantalla
+- **Estética pixel art**: Renderizado nítido sin suavizado
+- **Selección de personaje**: 3 héroes con habilidades propias (Velocidad, Salto, Tanque)
+- **Persistencia de selección**: El personaje elegido se recuerda entre sesiones
+ - **Pantalla de selección dedicada**: Vista con descripción y confirmación del héroe
+
+## 🚀 Tecnologías Utilizadas
+
+- **Phaser.js 3.90.0**: Motor de juegos 2D
+- **Vue.js 3.5.13**: Framework frontend
+- **TypeScript**: Tipado estático
+- **Vite**: Herramienta de desarrollo rápida
+- **Arcade Physics**: Sistema de física para colisiones
+
+## 🏗️ Estructura del Proyecto
+
+```
+src/game/scenes/
+├── Boot.ts          # Inicialización
+├── Preloader.ts     # Carga de assets y sprites procedurales
+├── MainMenu.ts      # Menú principal
+├── Game.ts          # Lógica principal del juego
+└── GameOver.ts      # Pantalla de fin de juego
+```
+
+## 🛠️ Instalación y Ejecución
+
+```bash
+# Instalar dependencias
+pnpm install
+
+# Ejecutar en modo desarrollo
+pnpm dev
+
+# Construir para producción
+pnpm build
+```
+
+## 🎯 Próximas Mejoras
+
+- [x] Múltiples niveles (3) con jefe final
+- [x] Power-ups especiales
+- [x] Efectos de sonido
+- [x] Animaciones de sprites
+- [ ] Sistema de puntuaciones altas
+- [ ] Enemigos con patrones más complejos
+- [ ] Plataformas móviles
+- [ ] Música de fondo y control de volumen
+- [ ] Indicador/temporizador de power-ups en HUD
+- [ ] Soporte gamepad y controles táctiles
+- [ ] Transiciones de escena (fade/zoom) y efectos de cámara
+- [ ] Sistema de niveles con mapas (Tiled) y tileset pixel art
+- [ ] Menú de pausa con reinicio rápido
+
+## 🎮 Tips para Jugar
+
+1. **Explora todo el nivel**: Las monedas están distribuidas en diferentes alturas
+2. **Cuidado con los enemigos**: Se mueven constantemente, observa sus patrones
+3. **Usa el salto estratégicamente**: Algunos saltos requieren timing perfecto
+4. **No tengas prisa**: Es mejor ir despacio que perder una vida
+5. **La moneda final**: Está en la parte más alta del nivel
+
+¡Disfruta del juego y trata de conseguir la puntuación más alta posible! 🏆
+</file>
+
+<file path="public/style.css">
+body {
+    margin: 0;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #000000; 
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spritePosition {
+    margin: 10px 0 0 10px;
+    font-size: 0.8em;
+}
+
+.button {
+    width: 140px;
+    margin: 10px;
+    padding: 10px;
+    background-color: #000000;
+    color: rgba(255, 255, 255, 0.87);
+    border: 1px solid rgba(255, 255, 255, 0.87);
+    cursor: pointer;
+    transition: all 0.3s;
+
+    &:hover {
+        border: 1px solid #0ec3c9;
+        color: #0ec3c9;
+    }
+
+    &:active {
+        background-color: #0ec3c9;
+    }
+
+    /* Disabled styles */
+    &:disabled {
+        cursor: not-allowed;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.3);
+    }
+}
+</file>
+
+<file path="src/game/audio/Sfx.ts">
+import { Scene } from 'phaser';
+
+export type WaveType = OscillatorType;
+
+// Simple WebAudio SFX helper using Phaser's audio context
+export class Sfx {
+  static tone(
+    scene: Scene,
+    freq: number,
+    duration = 0.15,
+    type: WaveType = 'sine',
+    volume = 0.2
+  ) {
+    // Use Phaser WebAudio context when available
+    // @ts-expect-error Phaser typing for sound.context exists at runtime
+    const ctx: AudioContext | undefined = scene.sound?.context as any;
+    if (!ctx || (ctx as any).state === 'closed') return; // Fallback: skip when no WebAudio or closed
+
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+
+    // Quick attack, short decay envelope
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(volume, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  static click(scene: Scene) {
+    this.tone(scene, 600, 0.05, 'square', 0.15);
+  }
+
+  static jump(scene: Scene) {
+    this.tone(scene, 420, 0.12, 'square', 0.2);
+  }
+
+  static coin(scene: Scene) {
+    // Two short blips
+    this.tone(scene, 880, 0.06, 'triangle', 0.22);
+    setTimeout(() => this.tone(scene, 1320, 0.07, 'triangle', 0.2), 50);
+  }
+
+  static hit(scene: Scene) {
+    this.tone(scene, 180, 0.2, 'sawtooth', 0.25);
+  }
+
+  static win(scene: Scene) {
+    const notes = [660, 880, 990, 1320];
+    notes.forEach((f, i) => setTimeout(() => this.tone(scene, f, 0.08, 'triangle', 0.2), i * 90));
+  }
+
+  static gameOver(scene: Scene) {
+    this.tone(scene, 300, 0.18, 'sine', 0.22);
+    setTimeout(() => this.tone(scene, 220, 0.22, 'sine', 0.22), 160);
+  }
+
+  static powerUp(scene: Scene) {
+    const notes = [523, 659, 784];
+    notes.forEach((f, i) => setTimeout(() => this.tone(scene, f, 0.06, 'square', 0.18), i * 70));
+  }
+}
+</file>
+
+<file path="src/main.ts">
+import App from './App.vue';
+import { createApp } from 'vue';
+
+createApp(App).mount('#app');
+</file>
+
+<file path="tsconfig.json">
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "skipLibCheck": true,
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "preserve",
+        /* Linting */
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "strictPropertyInitialization": false
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.vue"
+    ],
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
+}
+</file>
+
+<file path="vite/config.prod.mjs">
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue'
+
+const phasermsg = () => {
+    return {
+        name: 'phasermsg',
+        buildStart() {
+            process.stdout.write(`Building for production...\n`);
+        },
+        buildEnd() {
+            const line = "---------------------------------------------------------";
+            const msg = `❤️❤️❤️ Tell us about your game! - games@phaser.io ❤️❤️❤️`;
+            process.stdout.write(`${line}\n${msg}\n${line}\n`);
+
+            process.stdout.write(`✨ Done ✨\n`);
+        }
+    }
+}
+
+export default defineConfig({
+    base: './',
+    plugins: [
+        vue(),
+        phasermsg()
+    ],
+    resolve: {
+        alias: {
+          '@': fileURLToPath(new URL('../src', import.meta.url))
+        }
+      },
+    logLevel: 'warning',
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    phaser: ['phaser']
+                }
+            }
+        },
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                passes: 2
+            },
+            mangle: true,
+            format: {
+                comments: false
+            }
+        }
+    }
+});
+</file>
+
+<file path="env.d.ts">
+/// <reference types="vite/client" />
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2025 Phaser Studio Inc
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="src/game/EventBus.ts">
+import { Events } from 'phaser';
+
+// Used to emit events between components, HTML and Phaser scenes
+export const EventBus = new Events.EventEmitter();
+</file>
+
+<file path="src/game/scenes/Preloader.ts">
+import { Scene } from 'phaser';
+
+export class Preloader extends Scene
+{
+    constructor ()
+    {
+        super('Preloader');
+    }
+
+    init ()
+    {
+        //  We loaded this image in our Boot Scene, so we can display it here
+        this.add.image(512, 384, 'background');
+
+        //  A simple progress bar. This is the outline of the bar.
+        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
+
+        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
+        const bar = this.add.rectangle(512-230, 384, 4, 28, 0xffffff);
+
+        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
+        this.load.on('progress', (progress: number) => {
+
+            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
+            bar.width = 4 + (460 * progress);
+
+        });
+    }
+
+    preload ()
+    {
+        //  Load the assets for the game - Replace with your own assets
+        this.load.setPath('assets');
+
+        this.load.image('logo', 'logo.png');
+        this.load.image('star', 'star.png');
+        
+        // Crear sprites proceduralmente para el juego de plataformas
+        this.createPlayerSprite();
+        this.createPlatformSprite();
+        this.createEnemySprite();
+        this.createCoinSprite();
+        this.createPowerUpSprites();
+        this.createHeroSprites();
+        this.createDoorAndBossSprites();
+    }
+
+    createPlayerSprite()
+    {
+        // Crear un sprite del jugador (cuadrado azul)
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0x3498db);
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.generateTexture('player', 32, 32);
+        graphics.destroy();
+    }
+
+    createPlatformSprite()
+    {
+        // Crear sprite de plataforma (rectángulo marrón)
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0x8B4513);
+        graphics.fillRect(0, 0, 100, 20);
+        graphics.generateTexture('platform', 100, 20);
+        graphics.destroy();
+    }
+
+    createEnemySprite()
+    {
+        // Crear sprite de enemigo (círculo rojo)
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0xe74c3c);
+        graphics.fillCircle(16, 16, 16);
+        graphics.generateTexture('enemy', 32, 32);
+        graphics.destroy();
+    }
+
+    createCoinSprite()
+    {
+        // Crear sprite de moneda (círculo dorado)
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0xf1c40f);
+        graphics.fillCircle(12, 12, 12);
+        graphics.generateTexture('coin', 24, 24);
+        graphics.destroy();
+    }
+
+    createPowerUpSprites()
+    {
+        // Power-up de vida (círculo verde)
+        let g = this.add.graphics();
+        g.fillStyle(0x2ecc71);
+        g.fillCircle(12, 12, 12);
+        g.lineStyle(3, 0xffffff);
+        g.strokeCircle(12, 12, 12);
+        g.generateTexture('pu_life', 24, 24);
+        g.destroy();
+
+        // Power-up de velocidad (círculo azul)
+        g = this.add.graphics();
+        g.fillStyle(0x3498db);
+        g.fillCircle(12, 12, 12);
+        g.lineStyle(3, 0xffffff);
+        g.strokeCircle(12, 12, 12);
+        g.generateTexture('pu_speed', 24, 24);
+        g.destroy();
+
+        // Power-up de invencibilidad (círculo amarillo)
+        g = this.add.graphics();
+        g.fillStyle(0xf1c40f);
+        g.fillCircle(12, 12, 12);
+        g.lineStyle(3, 0xffffff);
+        g.strokeCircle(12, 12, 12);
+        g.generateTexture('pu_inv', 24, 24);
+        g.destroy();
+    }
+
+    createDoorAndBossSprites()
+    {
+        // Puerta (marrón con marco claro)
+        let g = this.add.graphics();
+        g.fillStyle(0x8B4513);
+        g.fillRect(0, 0, 32, 48);
+        g.lineStyle(3, 0xdeb887);
+        g.strokeRect(0, 0, 32, 48);
+        g.fillStyle(0x3e2723); g.fillRect(10, 20, 12, 12); // pomo
+        g.generateTexture('door', 32, 48);
+        g.destroy();
+
+        // Proyectil (orbe morado)
+        g = this.add.graphics();
+        g.fillStyle(0x8e44ad); g.fillCircle(6, 6, 6);
+        g.lineStyle(2, 0xffffff); g.strokeCircle(6, 6, 6);
+        g.generateTexture('projectile', 12, 12);
+        g.destroy();
+
+        // Jefe (enemigo grande)
+        g = this.add.graphics();
+        g.fillStyle(0xc0392b);
+        g.fillCircle(32, 32, 32);
+        g.lineStyle(4, 0x000000); g.strokeCircle(32, 32, 32);
+        g.generateTexture('boss', 64, 64);
+        g.destroy();
+    }
+
+    createHeroSprites()
+    {
+        // Héroe: Velocidad (azul) - base
+        let g = this.add.graphics();
+        g.fillStyle(0x1e90ff);
+        g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x145a86);
+        g.fillRect(4, 20, 24, 8);
+        g.fillStyle(0xffffff);
+        g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed', 32, 32);
+        g.destroy();
+
+        // También generamos 2 frames para animación de caminar y 1 para salto
+        // speed_1
+        g = this.add.graphics();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(4, 20, 24, 8);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_1', 32, 32); g.destroy();
+        // speed_2 (pierna adelantada)
+        g = this.add.graphics();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(6, 20, 20, 8);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_2', 32, 32); g.destroy();
+        // speed_jump
+        g = this.add.graphics();
+        g.fillStyle(0x1e90ff); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0x145a86); g.fillRect(10, 24, 12, 6);
+        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
+        g.generateTexture('hero_speed_jump', 32, 32); g.destroy();
+
+        // Héroe: Salto (verde) - base
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump', 32, 32); g.destroy();
+        // jump_1
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_1', 32, 32); g.destroy();
+        // jump_2 (paso alterno)
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(3, 14, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_2', 32, 32); g.destroy();
+        // jump_jump
+        g = this.add.graphics();
+        g.fillStyle(0x2ecc71); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0x1b8f4d); g.fillRect(2, 10, 4, 12);
+        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
+        g.generateTexture('hero_jump_jump', 32, 32); g.destroy();
+
+        // Héroe: Tanque (rojo) - base
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank', 32, 32); g.destroy();
+        // tank_1
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_1', 32, 32); g.destroy();
+        // tank_2 (paso alterno)
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(5, 8, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_2', 32, 32); g.destroy();
+        // tank_jump
+        g = this.add.graphics();
+        g.fillStyle(0xe74c3c); g.fillRect(4, 6, 24, 20);
+        g.fillStyle(0xb03a2e); g.fillRect(4, 6, 24, 6);
+        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
+        g.generateTexture('hero_tank_jump', 32, 32); g.destroy();
+    }
+
+    create ()
+    {
+        // Definir animaciones globales de caminar para cada héroe
+        this.anims.create({ key: 'walk_speed', frames: [
+            { key: 'hero_speed_1' }, { key: 'hero_speed_2' }
+        ], frameRate: 8, repeat: -1 });
+
+        this.anims.create({ key: 'walk_jump', frames: [
+            { key: 'hero_jump_1' }, { key: 'hero_jump_2' }
+        ], frameRate: 8, repeat: -1 });
+
+        this.anims.create({ key: 'walk_tank', frames: [
+            { key: 'hero_tank_1' }, { key: 'hero_tank_2' }
+        ], frameRate: 6, repeat: -1 });
+
+        //  Mover al menú principal
+        this.scene.start('MainMenu');
+    }
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+    "compilerOptions": {
+        "composite": true,
+        "skipLibCheck": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "allowSyntheticDefaultImports": true,
+        "strict": true
+    },
+    "include": [
+        "vite.config.ts"
+    ]
+}
+</file>
+
+<file path="vite/config.dev.mjs">
+import { fileURLToPath, URL } from 'node:url'
+
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+    base: './',
+    plugins: [
+        vue(),
+    ],
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('../src', import.meta.url))
+        }
+    },
+    server: {
+        port: 8080
+    }
+})
+</file>
+
+<file path="src/App.vue">
+<script setup lang="ts">
+import Phaser from 'phaser';
+import { ref, toRaw } from 'vue';
+import type { MainMenu } from './game/scenes/MainMenu';
+import PhaserGame from './PhaserGame.vue';
+
+// The sprite can only be moved in the MainMenu Scene
+const canMoveSprite = ref();
+
+//  References to the PhaserGame component (game and scene are exposed)
+const phaserRef = ref();
+const spritePosition = ref({ x: 0, y: 0 });
+
+const changeScene = () => {
+
+    const scene = toRaw(phaserRef.value.scene) as MainMenu;
+
+    if (scene)
+    {
+        //  Call the changeScene method defined in the `MainMenu`, `Game` and `GameOver` Scenes
+        scene.changeScene();
+    }
+
+}
+
+const moveSprite = () => {
+
+    if (phaserRef.value !== undefined)
+    {
+
+        const scene = toRaw(phaserRef.value.scene) as MainMenu;
+
+        if (scene)
+        {
+            // Get the update logo position
+            (scene as MainMenu).moveLogo(({ x, y }) => {
+
+                spritePosition.value = { x, y };
+
+            });
+        }
+    }
+
+}
+
+const addSprite = () => {
+
+    const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
+
+    if (scene)
+    {
+        // Add a new sprite to the current scene at a random position
+        const x = Phaser.Math.Between(64, scene.scale.width - 64);
+        const y = Phaser.Math.Between(64, scene.scale.height - 64);
+    
+        // `add.sprite` is a Phaser GameObjectFactory method and it returns a Sprite Game Object instance
+        const star = scene.add.sprite(x, y, 'star');
+
+        //  ... which you can then act upon. Here we create a Phaser Tween to fade the star sprite in and out.
+        //  You could, of course, do this from within the Phaser Scene code, but this is just an example
+        //  showing that Phaser objects and systems can be acted upon from outside of Phaser itself.
+        scene.add.tween({
+            targets: star,
+            duration: 500 + Math.random() * 1000,
+            alpha: 0,
+            yoyo: true,
+            repeat: -1
+        });
+    }
+
+}
+
+// Event emitted from the PhaserGame component
+const currentScene = (scene: MainMenu) => {
+
+    canMoveSprite.value = (scene.scene.key !== "MainMenu");
+
+}
+
+</script>
+
+<template>
+    <PhaserGame ref="phaserRef" @current-active-scene="currentScene" />
+    <div>
+        <div>
+            <button class="button" @click="changeScene">Change Scene</button>
+        </div>
+        <div>
+            <button :disabled="canMoveSprite" class="button" @click="moveSprite">Toggle Movement</button>
+        </div>
+        <div class="spritePosition">Sprite Position:
+            <pre>{{ spritePosition }}</pre>
+        </div>
+        <div>
+            <button class="button" @click="addSprite">Add New Sprite</button>
+        </div>
+    </div>
+</template>
+</file>
+
+<file path="src/game/scenes/GameOver.ts">
+import { EventBus } from '../EventBus';
+import { Sfx } from '../audio/Sfx';
+import { Scene } from 'phaser';
+
+export class GameOver extends Scene
+{
+    camera: Phaser.Cameras.Scene2D.Camera;
+    background: Phaser.GameObjects.Image;
+    gameOverText : Phaser.GameObjects.Text;
+
+    constructor ()
+    {
+        super('GameOver');
+    }
+
+    create ()
+    {
+        this.camera = this.cameras.main
+        this.camera.setBackgroundColor(0x2c3e50);
+
+        this.background = this.add.image(512, 384, 'background');
+        this.background.setAlpha(0.3);
+
+        this.gameOverText = this.add.text(512, 300, 'Fin del Juego', {
+            fontFamily: 'Arial Black', fontSize: 64, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 8,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Mostrar puntuación final si está disponible
+        const finalScore = this.registry.get('finalScore') || 0;
+        this.add.text(512, 400, `Puntuación Final: ${finalScore}`, {
+            fontFamily: 'Arial', fontSize: 32, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Botón para volver al menú
+        this.add.text(512, 500, 'Haz clic para volver al menú', {
+            fontFamily: 'Arial', fontSize: 24, color: '#ffff00',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Hacer la pantalla clickeable para volver al menú
+        this.input.once('pointerdown', () => {
+            Sfx.click(this);
+            this.changeScene();
+        });
+        
+        EventBus.emit('current-scene-ready', this);
+    }
+
+    changeScene ()
+    {
+        this.scene.start('MainMenu');
+    }
+}
+</file>
+
+<file path="src/game/scenes/Game.ts">
+import { EventBus } from '../EventBus';
+import { Sfx } from '../audio/Sfx';
+import { Scene } from 'phaser';
+
+export class Game extends Scene
+{
+    camera: Phaser.Cameras.Scene2D.Camera;
+    background: Phaser.GameObjects.Image;
+    heroKey: string = 'hero_jump';
+    levelIndex: number = 1;
+    path: string = '';
+    
+    // Elementos del juego
+    player!: Phaser.Physics.Arcade.Sprite;
+    platforms!: Phaser.Physics.Arcade.StaticGroup;
+    enemies!: Phaser.Physics.Arcade.Group;
+    coins!: Phaser.Physics.Arcade.Group;
+    powerUps!: Phaser.Physics.Arcade.Group;
+    doors!: Phaser.Physics.Arcade.StaticGroup;
+    cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+    spaceKey!: Phaser.Input.Keyboard.Key;
+    
+    // UI
+    scoreText!: Phaser.GameObjects.Text;
+    livesText!: Phaser.GameObjects.Text;
+    coinsText!: Phaser.GameObjects.Text;
+    
+    // Variables del juego
+    score: number = 0;
+    lives: number = 3;
+    gameWon: boolean = false;
+    speedX: number = 300;
+    jumpV: number = -600;
+    invincible: boolean = false;
+    levelComplete: boolean = false;
+    boss?: Phaser.Physics.Arcade.Image;
+    projectiles?: Phaser.Physics.Arcade.Group;
+    shootTimer?: Phaser.Time.TimerEvent;
+    teleportTimer?: Phaser.Time.TimerEvent;
+
+    constructor ()
+    {
+        super('Game');
+    }
+
+    create ()
+    {
+        this.camera = this.cameras.main;
+        this.camera.setBackgroundColor(0x87CEEB); // Azul cielo
+
+        // Reset de estado de nivel al (re)entrar
+        this.gameWon = false;
+        this.levelComplete = false;
+        this.invincible = false;
+        if (this.doors) { try { this.doors.destroy(true); } catch {} this.doors = undefined as any; }
+        if (this.shootTimer) { this.shootTimer.remove(false); this.shootTimer = undefined; }
+        if (this.teleportTimer) { this.teleportTimer.remove(false); this.teleportTimer = undefined; }
+        if (this.projectiles) { try { this.projectiles.destroy(true); } catch {} this.projectiles = undefined; }
+        if (this.boss) { try { this.boss.destroy(); } catch {} this.boss = undefined; }
+
+        // Selección de héroe
+        const sel = this.registry.get('selectedHero');
+        if (sel && typeof sel === 'string') {
+            this.heroKey = sel;
+        }
+
+        // Estado de nivel y camino
+        const idx = this.registry.get('levelIndex');
+        this.levelIndex = typeof idx === 'number' ? idx : 1;
+        const p = this.registry.get('path');
+        this.path = typeof p === 'string' ? p : '';
+
+        this.applyHeroStats();
+
+        // Continuidad de puntuación/vidas después de aplicar stats base
+        const carryScore = this.registry.get('carryScore');
+        if (typeof carryScore === 'number') this.score = carryScore;
+        const carryLives = this.registry.get('carryLives');
+        if (typeof carryLives === 'number') this.lives = carryLives;
+
+        // Crear plataformas
+        this.createPlatforms();
+        
+        // Crear jugador
+        this.createPlayer();
+        
+        // Crear enemigos
+        this.createEnemies();
+        
+        // Crear monedas
+        this.createCoins();
+
+        // Crear power-ups
+        this.createPowerUps();
+
+        // Jefe en nivel 3
+        if (this.levelIndex >= 3) {
+            this.spawnBoss();
+        }
+        
+        // Configurar controles
+        this.cursors = this.input.keyboard!.createCursorKeys();
+        this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        
+        // Crear UI
+        this.createUI();
+        
+        // Configurar física
+        this.setupPhysics();
+
+        EventBus.emit('current-scene-ready', this);
+    }
+
+    createPlatforms()
+    {
+        this.platforms = this.physics.add.staticGroup();
+        
+        // Plataforma base
+        this.platforms.create(512, 768, 'platform').setScale(10, 1).refreshBody();
+
+        const choice = this.getPathChoice();
+        if (this.levelIndex === 1) {
+            this.levelLayoutA();
+        } else if (this.levelIndex === 2) {
+            choice === 'A' ? this.levelLayoutA2() : this.levelLayoutB2();
+        } else {
+            choice === 'A' ? this.levelLayoutA3() : this.levelLayoutB3();
+        }
+    }
+
+    createPlayer()
+    {
+        const base = this.baseFrameFromHero(this.heroKey);
+        this.player = this.physics.add.sprite(100, 700, base);
+        this.player.setBounce(0.2);
+        this.player.setCollideWorldBounds(true);
+        this.player.setScale(1);
+    }
+
+    private baseFrameFromHero(key: string): string
+    {
+        if (key === 'hero_speed') return 'hero_speed_1';
+        if (key === 'hero_tank') return 'hero_tank_1';
+        return 'hero_jump_1';
+    }
+
+    private jumpFrameFromHero(key: string): string
+    {
+        if (key === 'hero_speed') return 'hero_speed_jump';
+        if (key === 'hero_tank') return 'hero_tank_jump';
+        return 'hero_jump_jump';
+    }
+
+    applyHeroStats()
+    {
+        // Defaults
+        this.speedX = 300;
+        this.jumpV = -600;
+        this.lives = 3;
+
+        switch (this.heroKey) {
+            case 'hero_speed':
+                this.speedX = 420;
+                this.jumpV = -600;
+                this.lives = 2;
+                break;
+            case 'hero_jump':
+                this.speedX = 300;
+                this.jumpV = -750;
+                this.lives = 3;
+                break;
+            case 'hero_tank':
+                this.speedX = 250;
+                this.jumpV = -600;
+                this.lives = 4;
+                break;
+        }
+    }
+
+    createEnemies()
+    {
+        this.enemies = this.physics.add.group();
+        const choice = this.getPathChoice();
+        let enemyPositions: { x: number; y: number }[] = [];
+        if (this.levelIndex === 1) {
+            enemyPositions = [ { x: 500, y: 500 }, { x: 800, y: 400 }, { x: 200, y: 300 }, { x: 600, y: 200 } ];
+        } else if (this.levelIndex === 2) {
+            enemyPositions = choice === 'A'
+                ? [ { x: 300, y: 520 }, { x: 700, y: 420 } ]
+                : [ { x: 200, y: 480 }, { x: 850, y: 280 }, { x: 500, y: 360 } ];
+        } else {
+            enemyPositions = choice === 'A'
+                ? [ { x: 250, y: 500 }, { x: 750, y: 300 } ]
+                : [ { x: 400, y: 520 }, { x: 900, y: 380 } ];
+        }
+
+        enemyPositions.forEach(pos => {
+            const enemy = this.enemies.create(pos.x, pos.y, 'enemy');
+            enemy.setBounce(1);
+            enemy.setCollideWorldBounds(true);
+            enemy.setVelocity(Phaser.Math.Between(-200, 200), 0);
+        });
+    }
+
+    createCoins()
+    {
+        this.coins = this.physics.add.group();
+        const choice = this.getPathChoice();
+        let coins: { x: number; y: number }[] = [];
+        if (this.levelIndex === 1) {
+            coins = [ { x: 250, y: 600 }, { x: 550, y: 500 }, { x: 850, y: 400 }, { x: 250, y: 300 }, { x: 650, y: 200 }, { x: 150, y: 100 }, { x: 950, y: 100 }, { x: 512, y: 50 } ];
+        } else if (this.levelIndex === 2) {
+            coins = choice === 'A'
+                ? [ { x: 200, y: 600 }, { x: 400, y: 520 }, { x: 680, y: 420 }, { x: 820, y: 320 }, { x: 512, y: 240 }, { x: 150, y: 180 }, { x: 900, y: 180 }, { x: 512, y: 80 } ]
+                : [ { x: 300, y: 580 }, { x: 520, y: 520 }, { x: 740, y: 460 }, { x: 900, y: 360 }, { x: 620, y: 260 }, { x: 420, y: 200 }, { x: 200, y: 160 }, { x: 850, y: 120 } ];
+        } else {
+            coins = choice === 'A'
+                ? [ { x: 250, y: 560 }, { x: 500, y: 460 }, { x: 750, y: 360 }, { x: 300, y: 260 }, { x: 600, y: 160 }, { x: 900, y: 160 }, { x: 150, y: 120 }, { x: 512, y: 80 } ]
+                : [ { x: 200, y: 600 }, { x: 450, y: 520 }, { x: 700, y: 420 }, { x: 900, y: 300 }, { x: 550, y: 220 }, { x: 300, y: 180 }, { x: 150, y: 140 }, { x: 512, y: 100 } ];
+        }
+        coins.forEach(pos => {
+            const coin = this.coins.create(pos.x, pos.y, 'coin');
+            coin.setBounce(0.4);
+            coin.setCollideWorldBounds(true);
+        });
+    }
+
+    createUI()
+    {
+        this.scoreText = this.add.text(16, 16, 'Puntuación: 0', {
+            fontSize: '32px',
+            color: '#000'
+        });
+        if (this.score > 0) {
+            this.scoreText.setText('Puntuación: ' + this.score);
+        }
+        
+        this.livesText = this.add.text(16, 60, 'Vidas: ' + this.lives, {
+            fontSize: '32px',
+            color: '#000'
+        });
+        
+        this.coinsText = this.add.text(16, 104, 'Monedas: 8/8', {
+            fontSize: '32px',
+            color: '#000'
+        });
+
+        // Texto de héroe y stats (arriba derecha)
+        const heroLabel = this.heroKey === 'hero_speed' ? 'Velocidad' : this.heroKey === 'hero_tank' ? 'Tanque' : 'Salto';
+        const stats = `VEL ${this.speedX} | SALTO ${Math.abs(this.jumpV)} | VIDAS ${this.lives}`;
+        this.add.text(1024 - 16, 16, `Nivel: ${this.levelIndex}\nHéroe: ${heroLabel}\n${stats}`, {
+            fontSize: '20px',
+            color: '#000',
+            align: 'right'
+        }).setOrigin(1, 0);
+    }
+
+    setupPhysics()
+    {
+        // Colisiones del jugador con plataformas
+        this.physics.add.collider(this.player, this.platforms);
+        
+        // Colisiones de enemigos con plataformas
+        this.physics.add.collider(this.enemies, this.platforms);
+        
+        // Colisiones de monedas con plataformas
+        this.physics.add.collider(this.coins, this.platforms);
+        
+        // Colisiones de power-ups con plataformas
+        this.physics.add.collider(this.powerUps, this.platforms);
+        
+        // Colisión jugador con enemigos
+        this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, undefined, this);
+        
+        // Colisión jugador con monedas
+        this.physics.add.overlap(this.player, this.coins, this.collectCoin, undefined, this);
+
+        // Colisión jugador con power-ups
+        this.physics.add.overlap(this.player, this.powerUps, this.collectPowerUp, undefined, this);
+
+        // Proyectiles del jefe
+        if (this.projectiles) {
+            this.physics.add.overlap(this.player, this.projectiles, this.hitEnemy, undefined, this);
+            this.physics.add.collider(this.projectiles, this.platforms, (proj: any) => proj.destroy());
+        }
+    }
+
+    update()
+    {
+        // Controles del jugador
+        if (this.cursors.left.isDown)
+        {
+            this.player.setVelocityX(-this.speedX);
+            this.player.setFlipX(true);
+        }
+        else if (this.cursors.right.isDown)
+        {
+            this.player.setVelocityX(this.speedX);
+            this.player.setFlipX(false);
+        }
+        else
+        {
+            this.player.setVelocityX(0);
+        }
+
+        if (this.player.body!.touching.down)
+        {
+            const upKey = this.cursors.up;
+            const space = this.spaceKey;
+            if ((upKey && Phaser.Input.Keyboard.JustDown(upKey)) || Phaser.Input.Keyboard.JustDown(space))
+            {
+                this.player.setVelocityY(this.jumpV);
+                Sfx.jump(this);
+            }
+        }
+        
+        // Animaciones: caminar / salto / idle
+        const onGround = this.player.body!.touching.down;
+        const vx = this.player.body!.velocity.x;
+        const vy = this.player.body!.velocity.y;
+        const moving = Math.abs(vx) > 10 && onGround;
+
+        if (!onGround)
+        {
+            this.player.anims.stop();
+            this.player.setTexture(this.jumpFrameFromHero(this.heroKey));
+        }
+        else if (moving)
+        {
+            const ak = this.heroKey === 'hero_speed' ? 'walk_speed' : this.heroKey === 'hero_tank' ? 'walk_tank' : 'walk_jump';
+            if (this.player.anims.currentAnim?.key !== ak)
+            {
+                this.player.anims.play(ak, true);
+            }
+        }
+        else
+        {
+            this.player.anims.stop();
+            this.player.setTexture(this.baseFrameFromHero(this.heroKey));
+        }
+
+        // Reiniciar si el jugador cae
+        if (this.player.y > 800)
+        {
+            this.resetPlayerPosition();
+        }
+        
+        // Verificar victoria (nunca más de una vez)
+        if (this.coins.countActive(true) === 0 && !this.gameWon)
+        {
+            this.gameWon = true;
+
+            // Bonus por completar el nivel
+            this.score += 100;
+            this.scoreText.setText('Puntuación: ' + this.score);
+
+            if (this.levelIndex >= 3)
+            {
+                // Fin de la partida tras el jefe
+                this.registry.set('finalScore', this.score);
+                this.add.text(512, 384, '¡GANASTE!', {
+                    fontSize: '64px', color: '#00ff00', stroke: '#000000', strokeThickness: 4
+                }).setOrigin(0.5);
+                Sfx.win(this);
+                this.time.delayedCall(2500, () => { this.scene.start('GameOver'); });
+            }
+            else
+            {
+                this.levelComplete = true;
+                this.invincible = true;
+                Sfx.win(this);
+                this.add.text(512, 120, 'Elige una puerta', { fontSize: '40px', color: '#ffff00', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+                // Retrasar un frame para asegurar que colisionadores/plataformas estén listos
+                this.time.delayedCall(50, () => this.spawnDoors());
+            }
+        }
+    }
+
+    private floatText(x: number, y: number, msg: string, color = '#ffff00')
+    {
+        const t = this.add.text(x, y, msg, { fontSize: '20px', color, stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 700, onComplete: () => t.destroy() });
+    }
+
+    collectPowerUp(_player: any, pu: any)
+    {
+        const type = pu.getData('ptype');
+        pu.disableBody(true, true);
+        Sfx.powerUp(this);
+
+        switch (type) {
+            case 'life':
+                this.lives += 1;
+                this.livesText.setText('Vidas: ' + this.lives);
+                this.floatText(pu.x, pu.y, '+1 Vida', '#2ecc71');
+                break;
+            case 'speed':
+                this.floatText(pu.x, pu.y, 'Velocidad +', '#3498db');
+                this.speedX = 450;
+                this.jumpV = -700;
+                this.player.setTint(0x3498db);
+                this.time.delayedCall(5000, () => {
+                    this.speedX = 300;
+                    this.jumpV = -600;
+                    this.player.clearTint();
+                });
+                break;
+            case 'inv':
+                this.floatText(pu.x, pu.y, 'Invencible', '#f1c40f');
+                this.invincible = true;
+                this.player.setTint(0xf1c40f);
+                this.time.delayedCall(4000, () => {
+                    this.invincible = false;
+                    this.player.clearTint();
+                });
+                break;
+        }
+    }
+
+    createPowerUps()
+    {
+        this.powerUps = this.physics.add.group();
+
+        const items = [
+            { x: 500, y: 520, key: 'pu_speed', type: 'speed' },
+            { x: 850, y: 370, key: 'pu_inv', type: 'inv' },
+            { x: 150, y: 120, key: 'pu_life', type: 'life' }
+        ];
+
+        items.forEach(i => {
+            const pu = this.powerUps.create(i.x, i.y, i.key) as Phaser.Physics.Arcade.Sprite;
+            pu.setBounce(0.2);
+            pu.setCollideWorldBounds(true);
+            pu.setData('ptype', i.type);
+        });
+    }
+
+    collectCoin(_player: any, coin: any)
+    {
+        // Crear efecto de partículas en la posición de la moneda
+        const particles = this.add.particles(coin.x, coin.y, 'coin', {
+            speed: { min: 50, max: 100 },
+            scale: { start: 0.5, end: 0 },
+            lifespan: 300,
+            quantity: 5
+        });
+        
+        // Eliminar el efecto después de un tiempo
+        this.time.delayedCall(300, () => {
+            particles.destroy();
+        });
+        
+        coin.disableBody(true, true);
+        this.score += 10;
+        this.scoreText.setText('Puntuación: ' + this.score);
+        
+        // Actualizar contador de monedas
+        const coinsRemaining = this.coins.countActive(true);
+        this.coinsText.setText(`Monedas: ${coinsRemaining}/8`);
+
+        Sfx.coin(this);
+    }
+
+    hitEnemy(_player: any, _enemy: any)
+    {
+        if (this.invincible) {
+            return;
+        }
+        Sfx.hit(this);
+        // Efecto de vibración de la cámara
+        this.cameras.main.shake(500, 0.02);
+        
+        // Efecto visual de daño (parpadeo del jugador)
+        this.player.setTint(0xff0000);
+        this.time.delayedCall(200, () => {
+            this.player.clearTint();
+        });
+        
+        this.lives--;
+        this.livesText.setText('Vidas: ' + this.lives);
+        
+        if (this.lives <= 0)
+        {
+            this.gameOver();
+        }
+        else
+        {
+            this.resetPlayerPosition();
+        }
+    }
+
+    resetPlayerPosition()
+    {
+        this.player.setPosition(100, 700);
+        this.player.setVelocity(0, 0);
+    }
+
+    gameOver()
+    {
+        // Guardar puntuación final
+        this.registry.set('finalScore', this.score);
+
+        Sfx.gameOver(this);
+
+        this.add.text(512, 384, 'GAME OVER', {
+            fontSize: '64px',
+            color: '#ff0000',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+        
+        this.time.delayedCall(3000, () => {
+            this.scene.start('GameOver');
+        });
+    }
+
+    changeScene ()
+    {
+        this.scene.start('GameOver');
+    }
+
+    private getPathChoice(): 'A' | 'B'
+    {
+        if (this.levelIndex === 1) return 'A';
+        const idx = this.levelIndex - 2;
+        const c = this.path.charAt(idx);
+        return c === 'B' ? 'B' : 'A';
+    }
+
+    private levelLayoutA() {
+        this.platforms.create(200, 650, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(500, 550, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(800, 450, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(200, 350, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(600, 250, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(100, 150, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(900, 150, 'platform').setScale(1.5, 1).refreshBody();
+    }
+    private levelLayoutA2() {
+        this.platforms.create(220, 620, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(420, 520, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(680, 420, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(820, 320, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(512, 240, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(150, 180, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(900, 180, 'platform').setScale(1.5, 1).refreshBody();
+    }
+    private levelLayoutB2() {
+        this.platforms.create(300, 600, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(520, 540, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(740, 480, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(900, 360, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(620, 260, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(420, 200, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(200, 160, 'platform').setScale(1.5, 1).refreshBody();
+    }
+    private levelLayoutA3() {
+        this.platforms.create(250, 560, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(500, 460, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(750, 360, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(300, 260, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(600, 160, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(900, 160, 'platform').setScale(1.5, 1).refreshBody();
+    }
+    private levelLayoutB3() {
+        this.platforms.create(200, 600, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(450, 520, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(700, 420, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(900, 300, 'platform').setScale(1.5, 1).refreshBody();
+        this.platforms.create(550, 220, 'platform').setScale(2, 1).refreshBody();
+        this.platforms.create(300, 180, 'platform').setScale(1.5, 1).refreshBody();
+    }
+
+    private spawnDoors() {
+        // Evitar duplicados si ya existen
+        if (this.doors && this.doors.getChildren().length > 0) return;
+        this.doors = this.physics.add.staticGroup();
+        const xA = 300, xB = 740;
+        // Posición fija y visible para evitar dependencias de layout
+        const y = 420;
+        const doorA = this.doors.create(xA, y, 'door') as Phaser.Physics.Arcade.Image;
+        const doorB = this.doors.create(xB, y, 'door') as Phaser.Physics.Arcade.Image;
+        doorA.setDepth(80);
+        doorB.setDepth(80);
+        // Pequeño brillo para destacarlas
+        this.tweens.add({ targets: [doorA, doorB], alpha: 0.6, yoyo: true, repeat: -1, duration: 600 });
+        this.physics.add.overlap(this.player, doorA, () => this.enterDoor('A'));
+        this.physics.add.overlap(this.player, doorB, () => this.enterDoor('B'));
+    }
+
+    private getDoorYForX(x: number): number {
+        let y = 600;
+        this.platforms.children.iterate((obj: any) => {
+            const plat = obj as Phaser.GameObjects.GameObject & { x: number; y: number; displayWidth: number; displayHeight: number };
+            if (!plat) return;
+            const halfW = plat.displayWidth / 2;
+            if (x >= plat.x - halfW && x <= plat.x + halfW) {
+                const top = plat.y - plat.displayHeight / 2;
+                const candidate = top - 24;
+                if (candidate < y) y = candidate;
+            }
+        });
+        return y;
+    }
+
+    private enterDoor(choice: 'A' | 'B') {
+        if (!this.levelComplete) return;
+        const nextIndex = this.levelIndex + 1;
+        const nextPath = this.path + choice;
+        this.registry.set('levelIndex', nextIndex);
+        this.registry.set('path', nextPath);
+        this.registry.set('carryScore', this.score);
+        this.registry.set('carryLives', this.lives);
+        this.scene.restart();
+    }
+
+    private spawnBoss() {
+        this.boss = this.physics.add.image(700, 300, 'boss');
+        this.boss.setImmovable(true);
+        this.boss.setCollideWorldBounds(true);
+        this.physics.add.collider(this.boss, this.platforms);
+        this.physics.add.overlap(this.player, this.boss, this.hitEnemy, undefined, this);
+
+        this.projectiles = this.physics.add.group();
+        this.shootTimer = this.time.addEvent({ delay: 1500, loop: true, callback: () => {
+            if (!this.boss) return;
+            const proj = this.projectiles!.create(this.boss.x, this.boss.y, 'projectile') as Phaser.Physics.Arcade.Image;
+            const angle = Phaser.Math.Angle.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
+            const speed = 220;
+            proj.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+        }});
+
+        this.teleportTimer = this.time.addEvent({ delay: 4000, loop: true, callback: () => {
+            if (!this.boss) return;
+            const spots = [ {x: 250, y: 300}, {x: 750, y: 260}, {x: 500, y: 200} ];
+            const s = Phaser.Utils.Array.GetRandom(spots);
+            this.boss!.setPosition(s.x, s.y);
+            this.cameras.main.flash(150, 255, 255, 255);
+        }});
+    }
+}
+</file>
+
+<file path="src/game/scenes/MainMenu.ts">
+import { GameObjects, Scene } from 'phaser';
+import { EventBus } from '../EventBus';
+import { Sfx } from '../audio/Sfx';
+
+export class MainMenu extends Scene
+{
+    background: GameObjects.Image;
+    logo: GameObjects.Image;
+    title: GameObjects.Text;
+    logoTween: Phaser.Tweens.Tween | null;
+    // Pantalla principal limpia, selección se mueve a CharacterSelect
+
+    constructor ()
+    {
+        super('MainMenu');
+    }
+
+    create ()
+    {
+        this.background = this.add.image(512, 384, 'background');
+
+        this.logo = this.add.image(512, 200, 'logo').setDepth(100);
+
+        this.title = this.add.text(512, 350, 'Aventura de Plataformas', {
+            fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 8,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Instrucciones del juego
+        this.add.text(512, 450, 'Usa las flechas para moverte\nFlecha arriba o Espacio para saltar\nRecoge todas las monedas\nEvita los enemigos rojos', {
+            fontFamily: 'Arial', fontSize: 24, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Botón para ir al selector de personajes
+        this.add.text(512, 620, 'Haz clic para elegir personaje', {
+            fontFamily: 'Arial Black', fontSize: 32, color: '#ffff00',
+            stroke: '#000000', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        // Hacer la pantalla clickeable para iniciar el juego
+        this.input.once('pointerdown', () => {
+            Sfx.click(this);
+            this.changeScene();
+        });
+
+        EventBus.emit('current-scene-ready', this);
+    }
+    
+    changeScene ()
+    {
+        if (this.logoTween)
+        {
+            this.logoTween.stop();
+            this.logoTween = null;
+        }
+        this.scene.start('CharacterSelect');
+    }
+
+    moveLogo (vueCallback: ({ x, y }: { x: number, y: number }) => void)
+    {
+        if (this.logoTween)
+        {
+            if (this.logoTween.isPlaying())
+            {
+                this.logoTween.pause();
+            }
+            else
+            {
+                this.logoTween.play();
+            }
+        } 
+        else
+        {
+            this.logoTween = this.tweens.add({
+                targets: this.logo,
+                x: { value: 750, duration: 3000, ease: 'Back.easeInOut' },
+                y: { value: 80, duration: 1500, ease: 'Sine.easeOut' },
+                yoyo: true,
+                repeat: -1,
+                onUpdate: () => {
+                    if (vueCallback)
+                    {
+                        vueCallback({
+                            x: Math.floor(this.logo.x),
+                            y: Math.floor(this.logo.y)
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    // Selección movida a CharacterSelect
+}
+</file>
+
+<file path="src/game/main.ts">
+import { Boot } from './scenes/Boot';
+import { GameOver } from './scenes/GameOver';
+import { Game as MainGame } from './scenes/Game';
+import { MainMenu } from './scenes/MainMenu';
+import { CharacterSelect } from './scenes/CharacterSelect';
+import { AUTO, Game } from 'phaser';
+import { Preloader } from './scenes/Preloader';
+
+// Find out more information about the Game Config at:
+// https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
+const config: Phaser.Types.Core.GameConfig = {
+    type: AUTO,
+    width: 1024,
+    height: 768,
+    parent: 'game-container',
+    backgroundColor: '#028af8',
+    pixelArt: true,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 800, x: 0 },
+            debug: false
+        }
+    },
+    scene: [
+        Boot,
+        Preloader,
+        MainMenu,
+        CharacterSelect,
+        MainGame,
+        GameOver
+    ]
+};
+
+const StartGame = (parent: string) => {
+
+    return new Game({ ...config, parent });
+
+}
+
+export default StartGame;
+</file>
+
+<file path="README.md">
+# Phaser Vue TypeScript Template
+
+This is a Phaser 3 project template that uses the Vue framework, TypeScript and Vite for bundling. It includes a bridge for Vue to Phaser game communication, hot-reloading for quick development workflow and scripts to generate production-ready builds.
+
+**[This Template is also available as a JavaScript version.](https://github.com/phaserjs/template-vue)**
+
+### Versions
+
+This template has been updated for:
+
+- [Phaser 3.90.0](https://github.com/phaserjs/phaser)
+- [Vue 3.5.13](https://github.com/vuejs)
+- [Vite 6.3.1](https://github.com/vitejs/vite)
+- [TypeScript 5.7.2](https://github.com/microsoft/TypeScript)
+
+![screenshot](screenshot.png)
+
+## Requirements
+
+[Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
+
+## Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm install` | Install project dependencies |
+| `npm run dev` | Launch a development web server |
+| `npm run build` | Create a production build in the `dist` folder |
+| `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.js" below) |
+| `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.js" below) |
+
+## Writing Code
+
+After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm run dev`.
+
+The local development server runs on `http://localhost:8080` by default. Please see the Vite documentation if you wish to change this, or add SSL support.
+
+Once the server is running you can edit any of the files in the `src` folder. Vite will automatically recompile your code and then reload the browser.
+
+## Template Project Structure
+
+We have provided a default project structure to get you started. This is as follows:
+
+| Path                          | Description                                                                                     |
+|-------------------------------|-------------------------------------------------------------------------------------------------|
+| `index.html`                  | A basic HTML page to contain the game.                                                         |
+| `src`                         | Contains the Vue source code.                                                                  |
+| `src/main.ts`                 | The main **Vue** entry point. This bootstraps the Vue application.                             |
+| `src/vite-env.d.ts`           | Global TypeScript declarations, providing type information.                                    |
+| `src/App.vue`                 | The main Vue component.                                                                        |
+| `src/PhaserGame.vue`     | The Vue component that initializes the Phaser Game and serves as a bridge between Vue and Phaser. |
+| `src/game/EventBus.ts`        | A simple event bus to communicate between Vue and Phaser.                                      |
+| `src/game`                    | Contains the game source code.                                                                |
+| `src/game/main.ts`            | The main **game** entry point. This contains the game configuration and starts the game.       |
+| `src/game/scenes/`            | The Phaser Scenes are in this folder.                                                         |
+| `public/style.css`            | Some simple CSS rules to help with page layout.                                               |
+| `public/assets`               | Contains the static assets used by the game.                                                  |
+
+## Vue Bridge
+
+The `PhaserGame.vue` component is the bridge between Vue and Phaser. It initializes the Phaser game and passes events between the two.
+
+To communicate between Vue and Phaser, you can use the **EventBus.ts** file. This is a simple event bus that allows you to emit and listen for events from both Vue and Phaser.
+
+```js
+// In Vue
+import { EventBus } from './EventBus';
+
+// Emit an event
+EventBus.emit('event-name', data);
+
+// In Phaser
+// Listen for an event
+EventBus.on('event-name', (data) => {
+    // Do something with the data
+});
+```
+
+In addition to this, the `PhaserGame` component exposes the Phaser game instance along with the most recently active Phaser Scene. You can pick these up from Vue via `(defineExpose({ scene, game }))`.
+
+Once exposed, you can access them like any regular state reference.
+
+## Phaser Scene Handling
+
+In Phaser, the Scene is the lifeblood of your game. It is where you sprites, game logic and all of the Phaser systems live. You can also have multiple scenes running at the same time. This template provides a way to obtain the current active scene from Vue.
+
+You can get the current Phaser Scene from the component event `"current-active-scene"`. In order to do this, you need to emit the event `"current-scene-ready"` from the Phaser Scene class. This event should be emitted when the scene is ready to be used. You can see this done in all of the Scenes in our template.
+
+**Important**: When you add a new Scene to your game, make sure you expose to Vue by emitting the `"current-scene-ready"` event via the `EventBus`, like this:
+
+
+```js
+class MyScene extends Phaser.Scene
+{
+    constructor ()
+    {
+        super('MyScene');
+    }
+
+    create ()
+    {
+        // Your Game Objects and logic here
+
+        // At the end of create method:
+        EventBus.emit('current-scene-ready', this);
+    }
+}
+```
+
+You don't have to emit this event if you don't need to access the specific scene from Vue. Also, you don't have to emit it at the end of `create`, you can emit it at any point. For example, should your Scene be waiting for a network request or API call to complete, it could emit the event once that data is ready.
+
+### Vue Component Example
+
+Here's an example of how to access Phaser data for use in a Vue Component:
+
+```typescript
+// In a parent component
+<script setup lang="ts">
+import { ref, toRaw } from 'vue';
+
+const phaserRef = ref();
+const game = toRaw(phaserRef.value.game) as Phaser.Game;
+const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
+
+const onCurrentActiveScene = (scene) => {
+    
+    // This is invoked
+
+}
+
+</script>
+<template>
+  <PhaserGame ref="phaserRef" @current-active-scene="onCurrentActiveScene" />
+</template>
+```
+
+In the code above, you can get a reference to the current Phaser Game instance and the current Scene by calling `ref()`.
+
+From this state reference, the game instance is available via `toRaw(phaserRef.value.game)` and the most recently active Scene via `toRaw(phaserRef.value.scene)`
+
+The `onCurrentActiveScene` callback will also be invoked whenever the the Phaser Scene changes, as long as you emit the event via the EventBus, as outlined above.
+
+## Handling Assets
+
+Vite supports loading assets via JavaScript module `import` statements.
+
+This template provides support for both embedding assets and also loading them from a static folder. To embed an asset, you can import it at the top of the JavaScript file you are using it in:
+
+```js
+import logoImg from './assets/logo.png'
+```
+
+To load static files such as audio files, videos, etc place them into the `public/assets` folder. Then you can use this path in the Loader calls within Phaser:
+
+```js
+preload ()
+{
+    //  This is an example of an imported bundled image.
+    //  Remember to import it at the top of this file
+    this.load.image('logo', logoImg);
+
+    //  This is an example of loading a static image
+    //  from the public/assets folder:
+    this.load.image('background', 'assets/bg.png');
+}
+```
+
+When you issue the `npm run build` command, all static assets are automatically copied to the `dist/assets` folder.
+
+## Deploying to Production
+
+After you run the `npm run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
+
+In order to deploy your game, you will need to upload *all* of the contents of the `dist` folder to a public facing web server.
+
+## Customizing the Template
+
+### Vite
+
+If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `vite/config.*.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json`. Please see the [Vite documentation](https://vitejs.dev/) for more information.
+
+## About log.js
+
+If you inspect our node scripts you will see there is a file called `log.js`. This file makes a single silent API call to a domain called `gryzor.co`. This domain is owned by Phaser Studio Inc. The domain name is a homage to one of our favorite retro games.
+
+We send the following 3 pieces of data to this API: The name of the template being used (vue, react, etc). If the build was 'dev' or 'prod' and finally the version of Phaser being used.
+
+At no point is any personal data collected or sent. We don't know about your project files, device, browser or anything else. Feel free to inspect the `log.js` file to confirm this.
+
+Why do we do this? Because being open source means we have no visible metrics about which of our templates are being used. We work hard to maintain a large and diverse set of templates for Phaser developers and this is our small anonymous way to determine if that work is actually paying off, or not. In short, it helps us ensure we're building the tools for you.
+
+However, if you don't want to send any data, you can use these commands instead:
+
+Dev:
+
+```bash
+npm run dev-nolog
+```
+
+Build:
+
+```bash
+npm run build-nolog
+```
+
+Or, to disable the log entirely, simply delete the file `log.js` and remove the call to it in the `scripts` section of `package.json`:
+
+Before:
+
+```json
+"scripts": {
+    "dev": "node log.js dev & dev-template-script",
+    "build": "node log.js build & build-template-script"
+},
+```
+
+After:
+
+```json
+"scripts": {
+    "dev": "dev-template-script",
+    "build": "build-template-script"
+},
+```
+
+Either of these will stop `log.js` from running. If you do decide to do this, please could you at least join our Discord and tell us which template you're using! Or send us a quick email. Either will be super-helpful, thank you.
+
+## Join the Phaser Community!
+
+We love to see what developers like you create with Phaser! It really motivates us to keep improving. So please join our community and show-off your work 😄
+
+**Visit:** The [Phaser website](https://phaser.io) and follow on [Phaser Twitter](https://twitter.com/phaser_)<br />
+**Play:** Some of the amazing games [#madewithphaser](https://twitter.com/search?q=%23madewithphaser&src=typed_query&f=live)<br />
+**Learn:** [API Docs](https://newdocs.phaser.io), [Support Forum](https://phaser.discourse.group/) and [StackOverflow](https://stackoverflow.com/questions/tagged/phaser-framework)<br />
+**Discord:** Join us on [Discord](https://discord.gg/phaser)<br />
+**Code:** 2000+ [Examples](https://labs.phaser.io)<br />
+**Read:** The [Phaser World](https://phaser.io/community/newsletter) Newsletter<br />
+
+Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, pixels and love.
+
+The Phaser logo and characters are &copy; 2011 - 2025 Phaser Studio Inc.
+
+All rights reserved.
+</file>
+
+<file path="package.json">
+{
+    "name": "game-vuephaser",
+    "description": "Un juego de plataformas 2D desarrollado con Phaser.js, Vue.js y TypeScript",
+    "version": "1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/josantos/game-vuephaser.git"
+    },
+    "author": "José Santos",
+    "license": "MIT",
+    "keywords": [
+        "phaser",
+        "phaser3",
+        "typescript",
+        "vue",
+        "vite",
+        "plataformas",
+        "juego",
+        "2d"
+    ],
+    "scripts": {
+        "dev": "node log.js dev & vite --config vite/config.dev.mjs",
+        "build": "node log.js build & vite build --config vite/config.prod.mjs",
+        "dev-nolog": "vite --config vite/config.dev.mjs",
+        "build-nolog": "vite build --config vite/config.prod.mjs",
+        "typecheck": "vue-tsc --noEmit"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "dependencies": {
+        "phaser": "^3.90.0",
+        "vue": "3.5.13"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.20",
+        "terser": "^5.31.0",
+        "@vitejs/plugin-vue": "^5.2.2",
+        "@vue/tsconfig": "^0.7.0",
+        "typescript": "~5.7.2",
+        "vite": "^6.3.1",
+        "vue-tsc": "^2.2.8"
+    }
+}
+</file>
+
+</files>

@@ -91,12 +91,12 @@ pnpm build
 - [ ] Sistema de puntuaciones altas
 - [ ] Enemigos con patrones más complejos
 - [ ] Plataformas móviles
- - [ ] Música de fondo y control de volumen
- - [ ] Indicador/temporizador de power-ups en HUD
- - [ ] Soporte gamepad y controles táctiles
- - [ ] Transiciones de escena (fade/zoom) y efectos de cámara
- - [ ] Sistema de niveles con mapas (Tiled) y tileset pixel art
- - [ ] Menú de pausa con reinicio rápido
+- [ ] Música de fondo y control de volumen
+- [ ] Indicador/temporizador de power-ups en HUD
+- [ ] Soporte gamepad y controles táctiles
+- [ ] Transiciones de escena (fade/zoom) y efectos de cámara
+- [ ] Sistema de niveles con mapas (Tiled) y tileset pixel art
+- [ ] Menú de pausa con reinicio rápido
 
 ## 🎮 Tips para Jugar
 
