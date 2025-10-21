@@ -19,6 +19,7 @@ export class Game extends Scene
     doors!: Phaser.Physics.Arcade.StaticGroup;
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     spaceKey!: Phaser.Input.Keyboard.Key;
+    wasd!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; up: Phaser.Input.Keyboard.Key };
     
     // UI
     scoreText!: Phaser.GameObjects.Text;
@@ -98,9 +99,15 @@ export class Game extends Scene
             this.spawnBoss();
         }
         
-        // Configurar controles
+        // Configurar controles (flechas + WASD) y capturas de teclado
         this.cursors = this.input.keyboard!.createCursorKeys();
         this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.input.keyboard!.addCapture(['UP','DOWN','LEFT','RIGHT','SPACE','W','A','S','D']);
+        this.wasd = {
+            left: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+            right: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+            up: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W)
+        };
         
         // Crear UI
         this.createUI();
@@ -130,25 +137,18 @@ export class Game extends Scene
 
     createPlayer()
     {
-        const base = this.baseFrameFromHero(this.heroKey);
-        this.player = this.physics.add.sprite(100, 700, base);
+        const sheet = this.sheetKeyFromHero(this.heroKey);
+        this.player = this.physics.add.sprite(100, 700, sheet, 0);
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
         this.player.setScale(1);
     }
 
-    private baseFrameFromHero(key: string): string
+    private sheetKeyFromHero(key: string): string
     {
-        if (key === 'hero_speed') return 'hero_speed_1';
-        if (key === 'hero_tank') return 'hero_tank_1';
-        return 'hero_jump_1';
-    }
-
-    private jumpFrameFromHero(key: string): string
-    {
-        if (key === 'hero_speed') return 'hero_speed_jump';
-        if (key === 'hero_tank') return 'hero_tank_jump';
-        return 'hero_jump_jump';
+        if (key === 'hero_speed') return 'hero_speed_sheet';
+        if (key === 'hero_tank') return 'hero_tank_sheet';
+        return 'hero_jump_sheet';
     }
 
     applyHeroStats()
@@ -194,11 +194,18 @@ export class Game extends Scene
                 : [ { x: 400, y: 520 }, { x: 900, y: 380 } ];
         }
 
-        enemyPositions.forEach(pos => {
-            const enemy = this.enemies.create(pos.x, pos.y, 'enemy');
-            enemy.setBounce(1);
-            enemy.setCollideWorldBounds(true);
-            enemy.setVelocity(Phaser.Math.Between(-200, 200), 0);
+        enemyPositions.forEach((pos, idx) => {
+            // Alterna verde/rojo para variedad
+            const key = (idx % 2 === 0) ? 'goblin_green_sheet' : 'goblin_red_sheet';
+            const gob = this.enemies.create(pos.x, pos.y, key, 0) as Phaser.Physics.Arcade.Sprite;
+
+            gob.setBounce(1).setCollideWorldBounds(true);
+            gob.setVelocity(Phaser.Math.Between(-200, 200), 0);
+
+            // Caja un pelín más estrecha que el 32x32
+            gob.body!.setSize(20, 26).setOffset(6, 6);
+
+            gob.play('goblin_run');
         });
     }
 
@@ -287,13 +294,15 @@ export class Game extends Scene
 
     update()
     {
-        // Controles del jugador
-        if (this.cursors.left.isDown)
+        // Controles del jugador (flechas o WASD)
+        const leftPressed = (this.cursors?.left?.isDown) || this.wasd?.left?.isDown;
+        const rightPressed = (this.cursors?.right?.isDown) || this.wasd?.right?.isDown;
+        if (leftPressed)
         {
             this.player.setVelocityX(-this.speedX);
             this.player.setFlipX(true);
         }
-        else if (this.cursors.right.isDown)
+        else if (rightPressed)
         {
             this.player.setVelocityX(this.speedX);
             this.player.setFlipX(false);
@@ -305,9 +314,10 @@ export class Game extends Scene
 
         if (this.player.body!.touching.down)
         {
-            const upKey = this.cursors.up;
+            const upKey = this.cursors?.up;
+            const wKey = this.wasd?.up;
             const space = this.spaceKey;
-            if ((upKey && Phaser.Input.Keyboard.JustDown(upKey)) || Phaser.Input.Keyboard.JustDown(space))
+            if ((upKey && Phaser.Input.Keyboard.JustDown(upKey)) || (wKey && Phaser.Input.Keyboard.JustDown(wKey)) || Phaser.Input.Keyboard.JustDown(space))
             {
                 this.player.setVelocityY(this.jumpV);
                 Sfx.jump(this);
@@ -317,26 +327,26 @@ export class Game extends Scene
         // Animaciones: caminar / salto / idle
         const onGround = this.player.body!.touching.down;
         const vx = this.player.body!.velocity.x;
-        const vy = this.player.body!.velocity.y;
         const moving = Math.abs(vx) > 10 && onGround;
 
-        if (!onGround)
-        {
-            this.player.anims.stop();
-            this.player.setTexture(this.jumpFrameFromHero(this.heroKey));
-        }
-        else if (moving)
-        {
-            const ak = this.heroKey === 'hero_speed' ? 'walk_speed' : this.heroKey === 'hero_tank' ? 'walk_tank' : 'walk_jump';
-            if (this.player.anims.currentAnim?.key !== ak)
-            {
-                this.player.anims.play(ak, true);
+        const isSpeed = this.heroKey === 'hero_speed';
+        const isTank = this.heroKey === 'hero_tank';
+        const walkKey = isSpeed ? 'walk_speed' : isTank ? 'walk_tank' : 'walk_jump';
+        const idleKey = isSpeed ? 'idle_speed' : isTank ? 'idle_tank' : 'idle_jump';
+        const jumpKey = isSpeed ? 'jump_speed' : isTank ? 'jump_tank' : 'jump_jump';
+
+        if (!onGround) {
+            if (this.player.anims.currentAnim?.key !== jumpKey) {
+                this.player.anims.play(jumpKey, true);
             }
-        }
-        else
-        {
-            this.player.anims.stop();
-            this.player.setTexture(this.baseFrameFromHero(this.heroKey));
+        } else if (moving) {
+            if (this.player.anims.currentAnim?.key !== walkKey) {
+                this.player.anims.play(walkKey, true);
+            }
+        } else {
+            if (this.player.anims.currentAnim?.key !== idleKey) {
+                this.player.anims.play(idleKey, true);
+            }
         }
 
         // Reiniciar si el jugador cae
@@ -344,6 +354,13 @@ export class Game extends Scene
         {
             this.resetPlayerPosition();
         }
+
+        // Flip horizontal de duendes según dirección de movimiento
+        this.enemies.children.iterate((e: any) => {
+            const s = e as Phaser.Physics.Arcade.Sprite;
+            if (s.body) s.setFlipX((s.body as any).velocity.x < 0);
+            return true;
+        });
         
         // Verificar victoria (nunca más de una vez)
         if (this.coins.countActive(true) === 0 && !this.gameWon)
@@ -459,6 +476,19 @@ export class Game extends Scene
         this.coinsText.setText(`Monedas: ${coinsRemaining}/8`);
 
         Sfx.coin(this);
+
+        // Reproducir animación de "pick"
+        const pickKey = this.heroKey === 'hero_speed' ? 'pick_speed' :
+                        this.heroKey === 'hero_tank' ? 'pick_tank' : 'pick_jump';
+        const idleKey = this.heroKey === 'hero_speed' ? 'idle_speed' :
+                        this.heroKey === 'hero_tank' ? 'idle_tank' : 'idle_jump';
+
+        if (this.player.body!.touching.down) {
+            this.player.anims.play(pickKey);
+            this.player.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                this.player.anims.play(idleKey, true);
+            });
+        }
     }
 
     hitEnemy(_player: any, _enemy: any)
@@ -575,28 +605,49 @@ export class Game extends Scene
         // Evitar duplicados si ya existen
         if (this.doors && this.doors.getChildren().length > 0) return;
         this.doors = this.physics.add.staticGroup();
-        const xA = 300, xB = 740;
-        // Posición fija y visible para evitar dependencias de layout
-        const y = 420;
-        const doorA = this.doors.create(xA, y, 'door') as Phaser.Physics.Arcade.Image;
-        const doorB = this.doors.create(xB, y, 'door') as Phaser.Physics.Arcade.Image;
+
+        const choice = this.getPathChoice();
+        const [xA, xB] = this.getDoorXs(this.levelIndex, choice);
+        const yA = this.getDoorYForX(xA);
+        const yB = this.getDoorYForX(xB);
+
+        const doorA = this.doors.create(xA, yA, 'door') as Phaser.Physics.Arcade.Image;
+        const doorB = this.doors.create(xB, yB, 'door') as Phaser.Physics.Arcade.Image;
         doorA.setDepth(80);
         doorB.setDepth(80);
-        // Pequeño brillo para destacarlas
-        this.tweens.add({ targets: [doorA, doorB], alpha: 0.6, yoyo: true, repeat: -1, duration: 600 });
+
+        // Glow + flecha
+        const glowA = this.add.image(xA, yA - 10, 'door_glow').setDepth(70).setAlpha(0.7);
+        glowA.setBlendMode(Phaser.BlendModes.ADD);
+        const glowB = this.add.image(xB, yB - 10, 'door_glow').setDepth(70).setAlpha(0.7);
+        glowB.setBlendMode(Phaser.BlendModes.ADD);
+        this.tweens.add({ targets: [glowA, glowB], alpha: 0.4, yoyo: true, repeat: -1, duration: 700 });
+
+        const arrowA = this.add.image(xA, yA - 40, 'door_arrow').setDepth(90);
+        const arrowB = this.add.image(xB, yB - 40, 'door_arrow').setDepth(90);
+        this.tweens.add({ targets: [arrowA, arrowB], y: '+=8', yoyo: true, repeat: -1, duration: 500, ease: 'Sine.easeInOut' });
+
         this.physics.add.overlap(this.player, doorA, () => this.enterDoor('A'));
         this.physics.add.overlap(this.player, doorB, () => this.enterDoor('B'));
     }
 
+    private getDoorXs(level: number, choice: 'A' | 'B'): [number, number] {
+        if (level === 1) return [100, 900];
+        if (level === 2) return choice === 'A' ? [420, 820] : [520, 900];
+        return [300, 740];
+    }
+
     private getDoorYForX(x: number): number {
-        let y = 600;
-        this.platforms.children.iterate((obj: any) => {
-            const plat = obj as Phaser.GameObjects.GameObject & { x: number; y: number; displayWidth: number; displayHeight: number };
-            if (!plat) return;
-            const halfW = plat.displayWidth / 2;
-            if (x >= plat.x - halfW && x <= plat.x + halfW) {
-                const top = plat.y - plat.displayHeight / 2;
-                const candidate = top - 24;
+        let y = 420; // fallback visible
+        const children = this.platforms.getChildren() as any[];
+        children.forEach((obj: any) => {
+            if (!obj || typeof obj.x !== 'number' || typeof obj.y !== 'number') return;
+            const w = (obj.displayWidth ?? 100);
+            const h = (obj.displayHeight ?? 20);
+            const halfW = w / 2;
+            if (x >= obj.x - halfW && x <= obj.x + halfW) {
+                const top = obj.y - h / 2;
+                const candidate = top - 24; // center of 48px door
                 if (candidate < y) y = candidate;
             }
         });

@@ -61,10 +61,10 @@ export class CharacterSelect extends Scene {
   }
 
   private layoutHeroes() {
-    const defs: { key: HeroKey; label: string }[] = [
-      { key: 'hero_speed', label: 'Velocidad' },
-      { key: 'hero_jump', label: 'Salto' },
-      { key: 'hero_tank', label: 'Tanque' }
+    const defs: { key: HeroKey; sheet: string; label: string }[] = [
+      { key: 'hero_speed', sheet: 'hero_speed_sheet', label: 'Velocidad' },
+      { key: 'hero_jump', sheet: 'hero_jump_sheet', label: 'Salto' },
+      { key: 'hero_tank', sheet: 'hero_tank_sheet', label: 'Tanque' }
     ];
     const startX = 260;
     const y = 360;
@@ -73,7 +73,7 @@ export class CharacterSelect extends Scene {
     defs.forEach((h, i) => {
       const x = startX + i * gap;
       const frame = this.add.rectangle(x, y, 120, 120).setStrokeStyle(6, 0xffffff).setDepth(90);
-      const img = this.add.image(x, y - 10, `${h.key}_1`).setScale(3).setInteractive({ useHandCursor: true }).setDepth(100);
+      const img = this.add.image(x, y - 10, h.sheet, 0).setScale(3).setInteractive({ useHandCursor: true }).setDepth(100);
       this.add.text(x, y + 70, h.label, { fontFamily: 'Arial Black', fontSize: 22, color: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5).setDepth(100);
 
       img.on('pointerdown', () => {

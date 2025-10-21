@@ -35,13 +35,22 @@ export class Preloader extends Scene
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
         
+        // Cargar spritesheets de héroes
+        this.load.spritesheet('hero_speed_sheet', 'hero_speed_sheet.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('hero_jump_sheet', 'hero_jump_sheet.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('hero_tank_sheet', 'hero_tank_sheet.png', { frameWidth: 32, frameHeight: 32 });
+
+        // Cargar spritesheets de enemigos y jefe
+        this.load.spritesheet('goblin_green_sheet', 'goblin_green_sheet.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('goblin_red_sheet', 'goblin_red_sheet.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('boss_troll_sheet', 'boss_troll_sheet.png', { frameWidth: 64, frameHeight: 64 });
+        
         // Crear sprites proceduralmente para el juego de plataformas
         this.createPlayerSprite();
         this.createPlatformSprite();
         this.createEnemySprite();
         this.createCoinSprite();
         this.createPowerUpSprites();
-        this.createHeroSprites();
         this.createDoorAndBossSprites();
     }
 
@@ -141,106 +150,65 @@ export class Preloader extends Scene
         g.lineStyle(4, 0x000000); g.strokeCircle(32, 32, 32);
         g.generateTexture('boss', 64, 64);
         g.destroy();
+
+        // Glow de puerta (círculo amarillo con alpha)
+        g = this.add.graphics();
+        for (let r = 44; r >= 16; r -= 8) {
+            const alpha = (r - 12) / 44 * 0.25;
+            g.fillStyle(0xfff176, alpha);
+            g.fillCircle(48, 48, r);
+        }
+        g.generateTexture('door_glow', 96, 96);
+        g.destroy();
+
+        // Flecha guía (triángulo)
+        g = this.add.graphics();
+        g.fillStyle(0xffff00, 1);
+        g.fillTriangle(12, 24, 24, 24, 18, 8);
+        g.lineStyle(2, 0x000000, 0.8);
+        g.strokeTriangle(12, 24, 24, 24, 18, 8);
+        g.generateTexture('door_arrow', 36, 32);
+        g.destroy();
     }
 
     createHeroSprites()
     {
-        // Héroe: Velocidad (azul) - base
-        let g = this.add.graphics();
-        g.fillStyle(0x1e90ff);
-        g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x145a86);
-        g.fillRect(4, 20, 24, 8);
-        g.fillStyle(0xffffff);
-        g.fillRect(6, 10, 8, 4);
-        g.generateTexture('hero_speed', 32, 32);
-        g.destroy();
-
-        // También generamos 2 frames para animación de caminar y 1 para salto
-        // speed_1
-        g = this.add.graphics();
-        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x145a86); g.fillRect(4, 20, 24, 8);
-        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
-        g.generateTexture('hero_speed_1', 32, 32); g.destroy();
-        // speed_2 (pierna adelantada)
-        g = this.add.graphics();
-        g.fillStyle(0x1e90ff); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x145a86); g.fillRect(6, 20, 20, 8);
-        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
-        g.generateTexture('hero_speed_2', 32, 32); g.destroy();
-        // speed_jump
-        g = this.add.graphics();
-        g.fillStyle(0x1e90ff); g.fillRect(4, 6, 24, 20);
-        g.fillStyle(0x145a86); g.fillRect(10, 24, 12, 6);
-        g.fillStyle(0xffffff); g.fillRect(6, 10, 8, 4);
-        g.generateTexture('hero_speed_jump', 32, 32); g.destroy();
-
-        // Héroe: Salto (verde) - base
-        g = this.add.graphics();
-        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
-        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
-        g.generateTexture('hero_jump', 32, 32); g.destroy();
-        // jump_1
-        g = this.add.graphics();
-        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x1b8f4d); g.fillRect(2, 12, 4, 12);
-        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
-        g.generateTexture('hero_jump_1', 32, 32); g.destroy();
-        // jump_2 (paso alterno)
-        g = this.add.graphics();
-        g.fillStyle(0x2ecc71); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0x1b8f4d); g.fillRect(3, 14, 4, 12);
-        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
-        g.generateTexture('hero_jump_2', 32, 32); g.destroy();
-        // jump_jump
-        g = this.add.graphics();
-        g.fillStyle(0x2ecc71); g.fillRect(4, 6, 24, 20);
-        g.fillStyle(0x1b8f4d); g.fillRect(2, 10, 4, 12);
-        g.fillStyle(0xffffcc); g.fillRect(10, 10, 6, 4);
-        g.generateTexture('hero_jump_jump', 32, 32); g.destroy();
-
-        // Héroe: Tanque (rojo) - base
-        g = this.add.graphics();
-        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
-        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
-        g.generateTexture('hero_tank', 32, 32); g.destroy();
-        // tank_1
-        g = this.add.graphics();
-        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0xb03a2e); g.fillRect(4, 8, 24, 6);
-        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
-        g.generateTexture('hero_tank_1', 32, 32); g.destroy();
-        // tank_2 (paso alterno)
-        g = this.add.graphics();
-        g.fillStyle(0xe74c3c); g.fillRect(4, 8, 24, 20);
-        g.fillStyle(0xb03a2e); g.fillRect(5, 8, 24, 6);
-        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
-        g.generateTexture('hero_tank_2', 32, 32); g.destroy();
-        // tank_jump
-        g = this.add.graphics();
-        g.fillStyle(0xe74c3c); g.fillRect(4, 6, 24, 20);
-        g.fillStyle(0xb03a2e); g.fillRect(4, 6, 24, 6);
-        g.fillStyle(0xeeeeee); g.fillRect(12, 12, 8, 4);
-        g.generateTexture('hero_tank_jump', 32, 32); g.destroy();
+        // Función eliminada - ahora usamos spritesheets desde assets
     }
 
     create ()
     {
-        // Definir animaciones globales de caminar para cada héroe
-        this.anims.create({ key: 'walk_speed', frames: [
-            { key: 'hero_speed_1' }, { key: 'hero_speed_2' }
-        ], frameRate: 8, repeat: -1 });
+        // Definir animaciones para cada héroe desde las spritesheets
+        
+        // SPEED
+        this.anims.create({ key: 'idle_speed', frames: this.anims.generateFrameNumbers('hero_speed_sheet', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'walk_speed', frames: this.anims.generateFrameNumbers('hero_speed_sheet', { start: 4, end: 9 }), frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'jump_speed', frames: this.anims.generateFrameNumbers('hero_speed_sheet', { start: 10, end: 12 }), frameRate: 8, repeat: 0 });
+        this.anims.create({ key: 'pick_speed', frames: this.anims.generateFrameNumbers('hero_speed_sheet', { start: 13, end: 16 }), frameRate: 10, repeat: 0 });
 
-        this.anims.create({ key: 'walk_jump', frames: [
-            { key: 'hero_jump_1' }, { key: 'hero_jump_2' }
-        ], frameRate: 8, repeat: -1 });
+        // JUMP
+        this.anims.create({ key: 'idle_jump', frames: this.anims.generateFrameNumbers('hero_jump_sheet', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'walk_jump', frames: this.anims.generateFrameNumbers('hero_jump_sheet', { start: 4, end: 9 }), frameRate: 12, repeat: -1 });
+        this.anims.create({ key: 'jump_jump', frames: this.anims.generateFrameNumbers('hero_jump_sheet', { start: 10, end: 12 }), frameRate: 8, repeat: 0 });
+        this.anims.create({ key: 'pick_jump', frames: this.anims.generateFrameNumbers('hero_jump_sheet', { start: 13, end: 16 }), frameRate: 10, repeat: 0 });
 
-        this.anims.create({ key: 'walk_tank', frames: [
-            { key: 'hero_tank_1' }, { key: 'hero_tank_2' }
-        ], frameRate: 6, repeat: -1 });
+        // TANK
+        this.anims.create({ key: 'idle_tank', frames: this.anims.generateFrameNumbers('hero_tank_sheet', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+        this.anims.create({ key: 'walk_tank', frames: this.anims.generateFrameNumbers('hero_tank_sheet', { start: 4, end: 9 }), frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'jump_tank', frames: this.anims.generateFrameNumbers('hero_tank_sheet', { start: 10, end: 12 }), frameRate: 6, repeat: 0 });
+        this.anims.create({ key: 'pick_tank', frames: this.anims.generateFrameNumbers('hero_tank_sheet', { start: 13, end: 16 }), frameRate: 8, repeat: 0 });
+
+        // GOBLINS (verde y rojo comparten animaciones)
+        this.anims.create({ key: 'goblin_idle', frames: this.anims.generateFrameNumbers('goblin_green_sheet', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+        this.anims.create({ key: 'goblin_run', frames: this.anims.generateFrameNumbers('goblin_green_sheet', { start: 4, end: 9 }), frameRate: 10, repeat: -1 });
+        this.anims.create({ key: 'goblin_atk', frames: this.anims.generateFrameNumbers('goblin_green_sheet', { start: 10, end: 12 }), frameRate: 8, repeat: 0 });
+        this.anims.create({ key: 'goblin_hit', frames: this.anims.generateFrameNumbers('goblin_green_sheet', { start: 13, end: 16 }), frameRate: 10, repeat: 0 });
+
+        // TROLL (jefe)
+        this.anims.create({ key: 'troll_idle', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+        this.anims.create({ key: 'troll_run', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 4, end: 9 }), frameRate: 8, repeat: -1 });
+        this.anims.create({ key: 'troll_cast', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 10, end: 12 }), frameRate: 8, repeat: 0 });
+        this.anims.create({ key: 'troll_portal', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 13, end: 16 }), frameRate: 10, repeat: 0 });
 
         //  Mover al menú principal
         this.scene.start('MainMenu');
