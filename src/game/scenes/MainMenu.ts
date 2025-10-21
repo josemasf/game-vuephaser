@@ -19,6 +19,9 @@ export class MainMenu extends Scene
     {
         this.background = this.add.image(512, 384, 'background');
 
+        // Agregar imagen de intro como portada del juego
+        this.add.image(512, 250, 'intro').setDepth(100);
+
         this.logo = this.add.image(512, 200, 'logo').setDepth(100);
 
         this.title = this.add.text(512, 350, 'Goblins & Heroes', {
