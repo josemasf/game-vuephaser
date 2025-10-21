@@ -201,6 +201,7 @@ export class Game extends Scene
 
             gob.setBounce(1).setCollideWorldBounds(true);
             gob.setVelocity(Phaser.Math.Between(-200, 200), 0);
+            gob.setScale(1.5); // Aumentar escala
 
             // Caja un pelín más estrecha que el 32x32
             gob.body!.setSize(20, 26).setOffset(6, 6);
@@ -226,9 +227,17 @@ export class Game extends Scene
                 : [ { x: 200, y: 600 }, { x: 450, y: 520 }, { x: 700, y: 420 }, { x: 900, y: 300 }, { x: 550, y: 220 }, { x: 300, y: 180 }, { x: 150, y: 140 }, { x: 512, y: 100 } ];
         }
         coins.forEach(pos => {
-            const coin = this.coins.create(pos.x, pos.y, 'coin');
+            const coin = this.coins.create(pos.x, pos.y, 'coin') as Phaser.Physics.Arcade.Sprite;
             coin.setBounce(0.4);
             coin.setCollideWorldBounds(true);
+            coin.setScale(1); // tamaño nativo 24x24
+
+            // hitbox compacta
+            coin.body!.setSize(16, 16).setOffset(4, 4);
+
+            // bob vertical sutil
+            this.tweens.add({ targets: coin, y: coin.y - 2, yoyo: true, repeat: -1, duration: 650, ease: 'Sine.inOut' });
+            this.tweens.add({ targets: coin, scaleX: 0.85, yoyo: true, repeat: -1, duration: 400, ease: 'Sine.inOut' });
         });
     }
 
@@ -405,6 +414,10 @@ export class Game extends Scene
         pu.disableBody(true, true);
         Sfx.powerUp(this);
 
+        // mini destello donde estaba el power-up
+        const flash = this.add.rectangle(pu.x, pu.y, 10, 10, 0xffffff, 0.9).setDepth(999);
+        this.tweens.add({ targets: flash, scaleX: 6, scaleY: 6, alpha: 0, duration: 220, onComplete: () => flash.destroy() });
+
         switch (type) {
             case 'life':
                 this.lives += 1;
@@ -416,6 +429,8 @@ export class Game extends Scene
                 this.speedX = 450;
                 this.jumpV = -700;
                 this.player.setTint(0x3498db);
+                // pulso corto en el player
+                this.tweens.add({ targets: this.player, scaleX: 1.06, scaleY: 1.06, yoyo: true, duration: 120 });
                 this.time.delayedCall(5000, () => {
                     this.speedX = 300;
                     this.jumpV = -600;
@@ -426,9 +441,15 @@ export class Game extends Scene
                 this.floatText(pu.x, pu.y, 'Invencible', '#f1c40f');
                 this.invincible = true;
                 this.player.setTint(0xf1c40f);
+                // aura rápida
+                const aura = this.add.circle(this.player.x, this.player.y, 22, 0xffff66, 0.2).setDepth(1).setBlendMode(Phaser.BlendModes.ADD);
+                const follow = this.time.addEvent({ delay: 16, loop: true, callback: () => aura.setPosition(this.player.x, this.player.y) });
+                this.tweens.add({ targets: aura, alpha: 0.35, yoyo: true, repeat: -1, duration: 300 });
                 this.time.delayedCall(4000, () => {
                     this.invincible = false;
                     this.player.clearTint();
+                    aura.destroy();
+                    follow.remove(false);
                 });
                 break;
         }
@@ -449,6 +470,13 @@ export class Game extends Scene
             pu.setBounce(0.2);
             pu.setCollideWorldBounds(true);
             pu.setData('ptype', i.type);
+            pu.setScale(1);
+            pu.body!.setSize(16, 16).setOffset(4, 4);
+            this.tweens.add({ targets: pu, y: pu.y - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
+            // Tintar según tipo para asegurar color
+            if (i.type === 'life') pu.setTint(0x2ecc71);
+            if (i.type === 'speed') pu.setTint(0x3498db);
+            if (i.type === 'inv') pu.setTint(0xf1c40f);
         });
     }
 
@@ -666,27 +694,47 @@ export class Game extends Scene
     }
 
     private spawnBoss() {
-        this.boss = this.physics.add.image(700, 300, 'boss');
-        this.boss.setImmovable(true);
-        this.boss.setCollideWorldBounds(true);
-        this.physics.add.collider(this.boss, this.platforms);
-        this.physics.add.overlap(this.player, this.boss, this.hitEnemy, undefined, this);
+        const boss = this.physics.add.sprite(700, 300, 'boss_troll_sheet', 0) as Phaser.Physics.Arcade.Sprite;
+        this.boss = boss as any;
+        boss.setImmovable(true).setCollideWorldBounds(true);
+        boss.setScale(1.2); // Escala ligeramente reducida para el troll (es más grande)
+        this.physics.add.collider(boss, this.platforms);
+        this.physics.add.overlap(this.player, boss, this.hitEnemy, undefined, this);
+        boss.play('troll_idle');
 
         this.projectiles = this.physics.add.group();
-        this.shootTimer = this.time.addEvent({ delay: 1500, loop: true, callback: () => {
-            if (!this.boss) return;
-            const proj = this.projectiles!.create(this.boss.x, this.boss.y, 'projectile') as Phaser.Physics.Arcade.Image;
-            const angle = Phaser.Math.Angle.Between(this.boss.x, this.boss.y, this.player.x, this.player.y);
-            const speed = 220;
-            proj.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-        }});
 
-        this.teleportTimer = this.time.addEvent({ delay: 4000, loop: true, callback: () => {
-            if (!this.boss) return;
-            const spots = [ {x: 250, y: 300}, {x: 750, y: 260}, {x: 500, y: 200} ];
-            const s = Phaser.Utils.Array.GetRandom(spots);
-            this.boss!.setPosition(s.x, s.y);
-            this.cameras.main.flash(150, 255, 255, 255);
-        }});
+        // Disparo cada 1.5s con anim de casteo
+        this.shootTimer = this.time.addEvent({
+            delay: 1500, loop: true, callback: () => {
+                if (!this.boss) return;
+                boss.play('troll_cast');
+                // Lanza el proyectil cuando termina el cast
+                boss.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    if (!this.boss) return;
+                    const proj = this.projectiles!.create(boss.x, boss.y, 'projectile') as Phaser.Physics.Arcade.Image;
+                    const angle = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
+                    const speed = 220;
+                    proj.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+                    boss.play('troll_idle'); // vuelta a idle
+                });
+            }
+        });
+
+        // Teletransporte cada 4s con anim portal
+        this.teleportTimer = this.time.addEvent({
+            delay: 4000, loop: true, callback: () => {
+                if (!this.boss) return;
+                boss.play('troll_portal');
+                boss.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                    if (!this.boss) return;
+                    const spots = [ {x: 250, y: 300}, {x: 750, y: 260}, {x: 500, y: 200} ];
+                    const s = Phaser.Utils.Array.GetRandom(spots);
+                    boss.setPosition(s.x, s.y);
+                    this.cameras.main.flash(150, 255, 255, 255);
+                    boss.play('troll_idle');
+                });
+            }
+        });
     }
 }
