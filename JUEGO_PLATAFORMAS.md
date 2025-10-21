@@ -1,6 +1,6 @@
-# 🎮 Juego de Plataformas 2D
+# 🎮 Goblins & Heroes
 
-Un emocionante juego de plataformas 2D desarrollado con **Phaser.js**, **Vue.js** y **TypeScript**.
+**Goblins & Heroes** es un emocionante juego de plataformas 2D desarrollado con **Phaser.js**, **Vue.js** y **TypeScript**.
 
 ## 🎯 Objetivo del Juego
 

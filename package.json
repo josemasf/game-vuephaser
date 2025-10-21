@@ -1,6 +1,6 @@
 {
-    "name": "game-vuephaser",
-    "description": "Un juego de plataformas 2D desarrollado con Phaser.js, Vue.js y TypeScript",
+    "name": "goblins-and-heroes",
+    "description": "Goblins & Heroes — juego de plataformas 2D en Phaser + Vue + TypeScript",
     "version": "1.0.0",
     "repository": {
         "type": "git",

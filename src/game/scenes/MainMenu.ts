@@ -21,7 +21,7 @@ export class MainMenu extends Scene
 
         this.logo = this.add.image(512, 200, 'logo').setDepth(100);
 
-        this.title = this.add.text(512, 350, 'Aventura de Plataformas', {
+        this.title = this.add.text(512, 350, 'Goblins & Heroes', {
             fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
