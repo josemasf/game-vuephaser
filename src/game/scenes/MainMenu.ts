@@ -5,7 +5,7 @@ import { Sfx } from '../audio/Sfx';
 export class MainMenu extends Scene
 {
     background: GameObjects.Image;
-    logo: GameObjects.Image;
+    intro: GameObjects.Image;
     title: GameObjects.Text;
     logoTween: Phaser.Tweens.Tween | null;
     // Pantalla principal limpia, selección se mueve a CharacterSelect
@@ -19,10 +19,20 @@ export class MainMenu extends Scene
     {
         this.background = this.add.image(512, 384, 'background');
 
-        // Agregar imagen de intro como portada del juego
-        this.add.image(512, 250, 'intro').setDepth(100);
+        // Agregar imagen de intro como portada del juego, centrada y escalada
+        this.intro = this.add.image(512, 384, 'intro')
+            .setDepth(100)
+            .setScale(1.2); // Escalar un poco para que ocupe más espacio
 
-        this.logo = this.add.image(512, 200, 'logo').setDepth(100);
+        // Agregar efecto de parpadeo (fade in/out suave)
+        this.tweens.add({
+            targets: this.intro,
+            alpha: { from: 0.6, to: 1.0 },
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.inOut'
+        });
 
         this.title = this.add.text(512, 350, 'Goblins & Heroes', {
             fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',
@@ -79,7 +89,7 @@ export class MainMenu extends Scene
         else
         {
             this.logoTween = this.tweens.add({
-                targets: this.logo,
+                targets: this.intro,
                 x: { value: 750, duration: 3000, ease: 'Back.easeInOut' },
                 y: { value: 80, duration: 1500, ease: 'Sine.easeOut' },
                 yoyo: true,
@@ -88,8 +98,8 @@ export class MainMenu extends Scene
                     if (vueCallback)
                     {
                         vueCallback({
-                            x: Math.floor(this.logo.x),
-                            y: Math.floor(this.logo.y)
+                            x: Math.floor(this.intro.x),
+                            y: Math.floor(this.intro.y)
                         });
                     }
                 }
