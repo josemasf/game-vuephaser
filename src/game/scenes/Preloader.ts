@@ -46,18 +46,47 @@ export class Preloader extends Scene
         this.load.spritesheet('goblin_red_sheet', 'goblin_red_sheet.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('boss_troll_sheet', 'boss_troll_sheet.png', { frameWidth: 64, frameHeight: 64 });
 
-        // (Opcional) Cargar spritesheets si existen
-        // this.load.spritesheet('coin_sheet', 'coin_sheet.png', { frameWidth: 24, frameHeight: 24 });
-        // this.load.spritesheet('pu_life_sheet', 'pu_life_sheet.png', { frameWidth: 24, frameHeight: 24 });
-        // this.load.spritesheet('pu_speed_sheet', 'pu_speed_sheet.png', { frameWidth: 24, frameHeight: 24 });
-        // this.load.spritesheet('pu_inv_sheet', 'pu_inv_sheet.png', { frameWidth: 24, frameHeight: 24 });
+        // Cargar spritesheets de monedas y power-ups
+        // Formato unificado: 8×3 grid de 32×32 por celda = 256×96 total
+        // 8 frames de animación en la primera fila (frames 0-7)
+        // Las filas 2 y 3 están transparentes (frames 8-23)
         
-        // Crear sprites proceduralmente para el juego de plataformas (crisp pixel-art)
+        this.load.spritesheet('coin_sheet', 'coin_sheet_like_hero.png', { 
+            frameWidth: 32, 
+            frameHeight: 32 
+        });
+        
+        this.load.spritesheet('pu_life_sheet', 'pu_life_sheet_like_hero.png', { 
+            frameWidth: 32, 
+            frameHeight: 32 
+        });
+        
+        this.load.spritesheet('pu_speed_sheet', 'pu_speed_sheet_like_hero.png', { 
+            frameWidth: 32, 
+            frameHeight: 32 
+        });
+        
+        this.load.spritesheet('pu_inv_sheet', 'pu_inv_sheet_like_hero.png', { 
+            frameWidth: 32, 
+            frameHeight: 32 
+        });
+
+        // Event listener para verificar carga exitosa
+        this.load.on('filecomplete', (key: string) => {
+            if (key.includes('coin_sheet') || key.includes('pu_')) {
+                console.log(`✅ Cargado: ${key}`);
+                const tex = this.textures.get(key);
+                if (tex) {
+                    console.log(`   Dimensiones: ${tex.source[0].width}x${tex.source[0].height}`);
+                }
+            }
+        });
+        
+        // Crear sprites proceduralmente para el juego de plataformas (player/platform/enemy/doors)
         this.createPlayerSprite();
         this.createPlatformSprite();
         this.createEnemySprite();
-        this.createCoinSprite();
-        this.createPowerUpSprites();
+        // Monedas y power-ups vendrán de spritesheets — no generamos aquí
         this.createDoorAndBossSprites();
     }
 
@@ -91,58 +120,8 @@ export class Preloader extends Scene
         graphics.destroy();
     }
 
-    createCoinSprite()
-    {
-        // Moneda pixel-art: círculo dorado con borde y brillo
-        const g = this.add.graphics();
-        g.fillStyle(0xF1C40F, 1); g.fillCircle(12, 12, 10);
-        g.lineStyle(2, 0x8A6E00, 1); g.strokeCircle(12, 12, 10);
-        g.fillStyle(0xFFF3A3, 0.9); g.fillCircle(9, 9, 3);
-        g.generateTexture('coin', 24, 24);
-        g.destroy();
-    }
-
-    createPowerUpSprites()
-    {
-        // Vida (corazón verde)
-        let g = this.add.graphics();
-        g.fillStyle(0x2ECC71, 1);
-        g.fillCircle(8, 10, 6); g.fillCircle(16, 10, 6);
-        g.fillTriangle(4, 12, 20, 12, 12, 22);
-        g.lineStyle(2, 0x0E6F3B, 1);
-        g.strokeTriangle(4, 12, 20, 12, 12, 22);
-        g.generateTexture('pu_life', 24, 24);
-        g.destroy();
-
-        // Velocidad (rayo azul)
-        g = this.add.graphics();
-        g.fillStyle(0x3498DB, 1);
-        const bolt = [
-            { x:12, y:4 }, { x:16, y:12 }, { x:12, y:12 }, { x:14, y:20 }, { x:8, y:12 }, { x:12, y:12 }
-        ];
-        g.fillPoints(bolt as any, true);
-        g.lineStyle(2, 0x154360, 1);
-        g.strokePoints(bolt as any, true);
-        g.generateTexture('pu_speed', 24, 24);
-        g.destroy();
-
-        // Invencibilidad (estrella amarilla)
-        g = this.add.graphics();
-        g.fillStyle(0xF1C40F, 1);
-        const star = (cx:number,cy:number,r1:number,r2:number,n:number)=>{
-            const pts: {x:number,y:number}[] = [];
-            for(let i=0;i<n*2;i++){
-                const a = (Math.PI*i)/n;
-                const r = i%2===0?r1:r2; pts.push({ x: cx + Math.cos(a)*r, y: cy + Math.sin(a)*r });
-            }
-            return pts;
-        };
-        const pts = star(12,12,8,4,5);
-        g.fillPoints(pts, true);
-        g.lineStyle(2, 0x8A6E00, 1); g.strokePoints(pts, true);
-        g.generateTexture('pu_inv', 24, 24);
-        g.destroy();
-    }
+    createCoinSprite() { /* no-op, usamos spritesheet */ }
+    createPowerUpSprites() { /* no-op, usamos spritesheet */ }
 
     createDoorAndBossSprites()
     {
@@ -230,11 +209,50 @@ export class Preloader extends Scene
         this.anims.create({ key: 'troll_cast', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 10, end: 12 }), frameRate: 8, repeat: 0 });
         this.anims.create({ key: 'troll_portal', frames: this.anims.generateFrameNumbers('boss_troll_sheet', { start: 13, end: 16 }), frameRate: 10, repeat: 0 });
 
-        // MONEDA: animación falsa via tween (sin spritesheet)
-        // Se maneja en Game.ts con tweens de escala/posición
+        // MONEDA: animación de giro (8 frames de la fila 0)
+        this.anims.create({ 
+            key: 'coin_spin', 
+            frames: this.anims.generateFrameNumbers('coin_sheet', { start: 0, end: 7 }), 
+            frameRate: 12, 
+            repeat: -1 
+        });
 
-        // POWER-UPS: pulso suave
-        // POWER-UPS: sin spritesheets; se animan via tweens
+        // POWER-UPS: pulso suave (8 frames de la fila 0)
+        this.anims.create({ 
+            key: 'pu_life_idle', 
+            frames: this.anims.generateFrameNumbers('pu_life_sheet', { start: 0, end: 7 }), 
+            frameRate: 6, 
+            repeat: -1 
+        });
+        
+        this.anims.create({ 
+            key: 'pu_speed_idle', 
+            frames: this.anims.generateFrameNumbers('pu_speed_sheet', { start: 0, end: 7 }), 
+            frameRate: 12, 
+            repeat: -1 
+        });
+        
+        this.anims.create({ 
+            key: 'pu_inv_idle', 
+            frames: this.anims.generateFrameNumbers('pu_inv_sheet', { start: 0, end: 7 }), 
+            frameRate: 8, 
+            repeat: -1 
+        });
+
+        // Forzar filtro NEAREST en TODAS las texturas pixel art (Phaser 3.60+)
+        const allSheets = [
+            'coin_sheet', 'pu_life_sheet', 'pu_speed_sheet', 'pu_inv_sheet',
+            'hero_speed_sheet', 'hero_jump_sheet', 'hero_tank_sheet',
+            'goblin_green_sheet', 'goblin_red_sheet', 'boss_troll_sheet'
+        ];
+        allSheets.forEach(k => {
+            const texture = this.textures.get(k);
+            if (texture && texture.key !== '__MISSING') {
+                texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+            } else {
+                console.warn(`Textura "${k}" no encontrada o no cargada correctamente`);
+            }
+        });
 
         //  Mover al menú principal
         this.scene.start('MainMenu');

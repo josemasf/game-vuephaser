@@ -98,6 +98,89 @@ pnpm build
 - [ ] Sistema de niveles con mapas (Tiled) y tileset pixel art
 - [ ] Menú de pausa con reinicio rápido
 
+ - [ ] Sistema de tesoros/reliquias evolutivas (exploración con recompensa)
+ - [ ] Progresión visual/jugable del héroe (armas/armaduras)
+ - [ ] Goblins como guardianes de tesoros (llaves, minijefes, drops únicos)
+ - [ ] Inventario + UI de reliquias (equipar/descartar, slots, descripciones)
+ - [ ] Loot tables y rarezas (común/ rara/ épica/ legendaria)
+ - [ ] Santuarios/forjas para mejorar reliquias (costes y límites)
+ - [ ] Mapas con secretos/cofres/puertas selladas por llaves
+ - [ ] Meta‑progresión persistente entre partidas (desbloqueos globales)
+
+## 🧭 Exploración y Progresión (Propuesta)
+
+- Identidad del juego: aventura + progresión dinámica (no solo plataformas)
+- Exploras el mapa y encuentras reliquias con efectos pasivos/activos
+- Los goblins son guardianes de tesoros con propósito narrativo
+- El héroe evoluciona visual y mecánicamente (stats, armas y armaduras)
+- Implementación modular y por fases para integrarse con la arquitectura actual
+
+## 🗝️ Reliquias (Propuestas)
+
+| Tipo de reliquia | Efecto | Visual | Rareza |
+| --- | --- | --- | --- |
+| Amuleto de Vigor | +1 salto extra | Aura verde | Común |
+| Cráneo Rúnico | Ataque mágico cargado | Efecto púrpura | Raro |
+| Gema de la Sombra | Invisibilidad temporal | Sombras | Épico |
+
+Mecánica: al recoger, la reliquia se guarda en `player.relics` y activa una habilidad permanente o con cooldown según su tipo.
+
+| Tipo de reliquia | Efecto | Visual | Rareza |
+| --- | --- | --- | --- |
+| Corona del Rey Goblin | Aliados goblin temporalmente neutrales | Corona visible | Legendario |
+
+## ⚔️ Sistema de Armas y Armaduras
+
+Equipamiento visible con impacto real en el juego.
+
+| Slot | Ejemplo | Beneficio | Visual |
+| --- | --- | --- | --- |
+| Casco | Casco de Bronce | +10% defensa | Cambiado en sprite |
+| Armadura | Cota de Escamas | Reduce daño | Sprite más robusto |
+| Arma | Ballesta | Disparos a distancia | Anim nueva |
+| Escudo | Escudo de Torre | Parry / bloquear | Anim defensiva |
+
+Notas:
+- Inicio sugerido: 3 armas (espada básica, ballesta, lanza).
+- Cada arma cambia rango de ataque y animaciones del héroe.
+
+## 👹 Nuevos Enemigos Temáticos
+
+Goblins guardianes:
+- Guardias de tesoro: más fuertes, defienden cofres.
+- Chamanes: disparan magia, invocan crías.
+- Goblins élite: equipados con cascos, sueltan partes de armadura al morir.
+
+Nidos de crías:
+- Rápidas, atacan en enjambre.
+- Ataque débil; si te descuidas te paralizan saltando encima.
+- Ideales para cuevas y zonas ocultas.
+
+## 🧍 Progresión del Jugador (Visual + Gameplay)
+
+- Escudo recogido → aparece en el sprite (lado izquierdo) y permite bloquear/parry.
+- Casco obtenido → nueva cabeza/peinado/forma.
+- Armadura equipada → torso cambia (defensa efectiva).
+- Arma equipada → animación y rango de ataque diferente.
+
+Implementación técnica: sprites por capas (cabeza/torso/brazos/casco/arma) agrupados; Phaser soporta múltiples GameObjects por personaje.
+
+## 🧩 Implementación por Fases
+
+Fase 1: Habilidades por tesoro (sin equipamiento visual aún)
+- Añadir cofres con reliquias.
+- Cada reliquia modifica atributos del héroe.
+- Persisten entre niveles.
+
+Fase 2: Equipables con cambios visuales
+- Dividir sprite del héroe en capas.
+- Añadir slots: arma + casco + armadura.
+
+Fase 3: Nuevos enemigos y nidos
+- Grupo “crías goblin”.
+- Goblin guardián con armadura y arma.
+- Cofres protegidos por enemigos.
+
 ## 🎮 Tips para Jugar
 
 1. **Explora todo el nivel**: Las monedas están distribuidas en diferentes alturas

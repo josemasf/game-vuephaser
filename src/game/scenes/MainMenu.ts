@@ -20,19 +20,18 @@ export class MainMenu extends Scene
         this.background = this.add.image(512, 384, 'background');
 
         // Agregar imagen de intro como portada del juego, centrada y escalada
-        this.intro = this.add.image(512, 384, 'intro')
-            .setDepth(100)
-            .setScale(1.2); // Escalar un poco para que ocupe más espacio
+        this.intro = this.add.image(512, 500, 'intro')
+            .setDepth(100); // Escalar un poco para que ocupe más espacio
 
-        // Agregar efecto de parpadeo (fade in/out suave)
-        this.tweens.add({
-            targets: this.intro,
-            alpha: { from: 0.6, to: 1.0 },
-            duration: 1500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut'
-        });
+        // // Agregar efecto de parpadeo (fade in/out suave)
+        // this.tweens.add({
+        //     targets: this.intro,
+        //     alpha: { from: 0.6, to: 1.0 },
+        //     duration: 1500,
+        //     yoyo: true,
+        //     repeat: -1,
+        //     ease: 'Sine.inOut'
+        // });
 
         this.title = this.add.text(512, 350, 'Goblins & Heroes', {
             fontFamily: 'Arial Black', fontSize: 48, color: '#ffffff',

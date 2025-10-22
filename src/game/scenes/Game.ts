@@ -48,6 +48,7 @@ export class Game extends Scene
     {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x87CEEB); // Azul cielo
+        this.camera.roundPixels = true; // Evitar sub-pixel blur en pixel art
 
         // Reset de estado de nivel al (re)entrar
         this.gameWon = false;
@@ -226,18 +227,18 @@ export class Game extends Scene
                 ? [ { x: 250, y: 560 }, { x: 500, y: 460 }, { x: 750, y: 360 }, { x: 300, y: 260 }, { x: 600, y: 160 }, { x: 900, y: 160 }, { x: 150, y: 120 }, { x: 512, y: 80 } ]
                 : [ { x: 200, y: 600 }, { x: 450, y: 520 }, { x: 700, y: 420 }, { x: 900, y: 300 }, { x: 550, y: 220 }, { x: 300, y: 180 }, { x: 150, y: 140 }, { x: 512, y: 100 } ];
         }
-        coins.forEach(pos => {
-            const coin = this.coins.create(pos.x, pos.y, 'coin') as Phaser.Physics.Arcade.Sprite;
-            coin.setBounce(0.4);
-            coin.setCollideWorldBounds(true);
-            coin.setScale(1); // tamaño nativo 24x24
-
-            // hitbox compacta
-            coin.body!.setSize(16, 16).setOffset(4, 4);
-
-            // bob vertical sutil
-            this.tweens.add({ targets: coin, y: coin.y - 2, yoyo: true, repeat: -1, duration: 650, ease: 'Sine.inOut' });
-            this.tweens.add({ targets: coin, scaleX: 0.85, yoyo: true, repeat: -1, duration: 400, ease: 'Sine.inOut' });
+        
+        coins.forEach((pos) => {
+            const coin = this.coins.create(pos.x, pos.y, 'coin_sheet', 0) as Phaser.Physics.Arcade.Sprite;
+            coin.play('coin_spin');
+            coin.setScale(1); // 24x24 nativo
+            // Monedas sin gravedad y sin movimiento físico; no atraviesan ni rebotan
+            coin.body!.setAllowGravity(false);
+            coin.setImmovable(true);
+            coin.setBounce(0);
+            coin.body!.setSize(20, 20).setOffset(2, 2);
+            // Bob leve solo hacia arriba, sin bajar del punto base
+            this.tweens.add({ targets: coin, y: pos.y - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
         });
     }
 
@@ -279,11 +280,9 @@ export class Game extends Scene
         // Colisiones de enemigos con plataformas
         this.physics.add.collider(this.enemies, this.platforms);
         
-        // Colisiones de monedas con plataformas
-        this.physics.add.collider(this.coins, this.platforms);
+        // Las monedas NO colisionan con plataformas (flotan libremente)
         
-        // Colisiones de power-ups con plataformas
-        this.physics.add.collider(this.powerUps, this.platforms);
+        // Los power-ups flotan; no colisionan con plataformas
         
         // Colisión jugador con enemigos
         this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, undefined, this);
@@ -411,6 +410,13 @@ export class Game extends Scene
     collectPowerUp(_player: any, pu: any)
     {
         const type = pu.getData('ptype');
+        const glow = pu.getData('glow');
+        
+        // Destruir el glow asociado
+        if (glow && glow.active) {
+            glow.destroy();
+        }
+        
         pu.disableBody(true, true);
         Sfx.powerUp(this);
 
@@ -460,30 +466,95 @@ export class Game extends Scene
         this.powerUps = this.physics.add.group();
 
         const items = [
-            { x: 500, y: 520, key: 'pu_speed', type: 'speed' },
-            { x: 850, y: 370, key: 'pu_inv', type: 'inv' },
-            { x: 150, y: 120, key: 'pu_life', type: 'life' }
+            { x: 500, y: 520, key: 'pu_speed_sheet', anim: 'pu_speed_idle', type: 'speed' },
+            { x: 850, y: 370, key: 'pu_inv_sheet', anim: 'pu_inv_idle', type: 'inv' },
+            { x: 150, y: 120, key: 'pu_life_sheet', anim: 'pu_life_idle', type: 'life' }
         ];
 
         items.forEach(i => {
-            const pu = this.powerUps.create(i.x, i.y, i.key) as Phaser.Physics.Arcade.Sprite;
-            pu.setBounce(0.2);
-            pu.setCollideWorldBounds(true);
+            // Verificar textura
+            const tex = this.textures.get(i.key);
+            if (!tex || tex.key === '__MISSING') {
+                console.error(`❌ Textura ${i.key} no encontrada`);
+                return;
+            }
+            
+            const pu = this.powerUps.create(i.x, i.y, i.key, 0) as Phaser.Physics.Arcade.Sprite;
+            pu.play(i.anim);
+            
+            // Escala moderada y sin físicas que lo muevan
+            pu.setScale(1.5);
+            pu.setBounce(0);
+            pu.setCollideWorldBounds(false);
             pu.setData('ptype', i.type);
-            pu.setScale(1);
-            pu.body!.setSize(16, 16).setOffset(4, 4);
-            this.tweens.add({ targets: pu, y: pu.y - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
-            // Tintar según tipo para asegurar color
-            if (i.type === 'life') pu.setTint(0x2ecc71);
-            if (i.type === 'speed') pu.setTint(0x3498db);
-            if (i.type === 'inv') pu.setTint(0xf1c40f);
+            
+            // Hitbox ajustada (sprites de 32x32 escalados a 2.0 = 64x64)
+            pu.body!.setSize(20, 20).setOffset(2, 2);
+
+            // Flotantes: sin gravedad ni empuje
+            (pu.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+            pu.setImmovable(true);
+
+            // Efecto de flotación pronunciado
+            this.tweens.add({
+                targets: pu,
+                y: pu.y - 4,
+                duration: 1100,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.inOut'
+            });
+
+            // Efecto de pulso muy sutil en la escala
+            this.tweens.add({
+                targets: pu,
+                scaleX: 1.55,
+                scaleY: 1.55,
+                duration: 1200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.inOut'
+            });
+
+            // Añadir un glow circular pequeño y muy sutil detrás según el tipo
+            let glowColor = 0xffffff;
+            if (i.type === 'life') glowColor = 0xff6b9d; // Rosa/rojo para vida
+            else if (i.type === 'speed') glowColor = 0x4fc3f7; // Azul cyan para velocidad
+            else if (i.type === 'inv') glowColor = 0xffd700; // Dorado para invencibilidad
+
+            const glow = this.add.circle(i.x, i.y, 14, glowColor, 0.12);
+            glow.setDepth(pu.depth - 1);
+            glow.setBlendMode(Phaser.BlendModes.ADD);
+
+            // Pulso del glow muy sutil
+            this.tweens.add({
+                targets: glow,
+                alpha: 0.2,
+                scale: 1.1,
+                duration: 1400,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.inOut'
+            });
+
+            // Vincular el glow al movimiento del power-up
+            pu.setData('glow', glow);
+            
+            // Actualizar posición del glow en cada frame
+            this.events.on('update', () => {
+                if (pu.active && glow.active) {
+                    glow.setPosition(pu.x, pu.y);
+                }
+            });
         });
+        
+        console.log(`⚡ Creados ${items.length} power-ups`);
     }
 
     collectCoin(_player: any, coin: any)
     {
         // Crear efecto de partículas en la posición de la moneda
-        const particles = this.add.particles(coin.x, coin.y, 'coin', {
+        const particles = this.add.particles(coin.x, coin.y, 'coin_sheet', {
             speed: { min: 50, max: 100 },
             scale: { start: 0.5, end: 0 },
             lifespan: 300,
