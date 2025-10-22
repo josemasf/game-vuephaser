@@ -1,12 +1,19 @@
 import { EventBus } from '../EventBus';
 import { Sfx } from '../audio/Sfx';
 import { Scene } from 'phaser';
+import { HeroKey, HeroStatsService } from '../core/Hero';
+import { Hud } from '../ui/Hud';
+import { EnemySpawner } from '../spawners/EnemySpawner';
+import { CoinSpawner } from '../spawners/CoinSpawner';
+import { PowerUpSpawner } from '../spawners/PowerUpSpawner';
+import { BossController } from '../boss/BossController';
+import { DoorController } from '../doors/DoorController';
 
 export class Game extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
-    heroKey: string = 'hero_jump';
+    heroKey: HeroKey = 'hero_jump';
     levelIndex: number = 1;
     path: string = '';
     
@@ -16,15 +23,12 @@ export class Game extends Scene
     enemies!: Phaser.Physics.Arcade.Group;
     coins!: Phaser.Physics.Arcade.Group;
     powerUps!: Phaser.Physics.Arcade.Group;
-    doors!: Phaser.Physics.Arcade.StaticGroup;
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     spaceKey!: Phaser.Input.Keyboard.Key;
     wasd!: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key; up: Phaser.Input.Keyboard.Key };
     
     // UI
-    scoreText!: Phaser.GameObjects.Text;
-    livesText!: Phaser.GameObjects.Text;
-    coinsText!: Phaser.GameObjects.Text;
+    hud!: Hud;
     
     // Variables del juego
     score: number = 0;
@@ -34,10 +38,9 @@ export class Game extends Scene
     jumpV: number = -600;
     invincible: boolean = false;
     levelComplete: boolean = false;
-    boss?: Phaser.Physics.Arcade.Image;
-    projectiles?: Phaser.Physics.Arcade.Group;
-    shootTimer?: Phaser.Time.TimerEvent;
-    teleportTimer?: Phaser.Time.TimerEvent;
+    bossCtrl?: BossController;
+    doorCtrl?: DoorController;
+    totalCoins: number = 0;
 
     constructor ()
     {
@@ -54,15 +57,13 @@ export class Game extends Scene
         this.gameWon = false;
         this.levelComplete = false;
         this.invincible = false;
-        if (this.doors) { try { this.doors.destroy(true); } catch {} this.doors = undefined as any; }
-        if (this.shootTimer) { this.shootTimer.remove(false); this.shootTimer = undefined; }
-        if (this.teleportTimer) { this.teleportTimer.remove(false); this.teleportTimer = undefined; }
-        if (this.projectiles) { try { this.projectiles.destroy(true); } catch {} this.projectiles = undefined; }
-        if (this.boss) { try { this.boss.destroy(); } catch {} this.boss = undefined; }
+        try { this.doorCtrl = new DoorController(this); } catch {}
+        try { this.bossCtrl?.dispose(); } catch {}
+        this.bossCtrl = undefined;
 
         // Selección de héroe
         const sel = this.registry.get('selectedHero');
-        if (sel && typeof sel === 'string') {
+        if (sel && (sel === 'hero_speed' || sel === 'hero_jump' || sel === 'hero_tank')) {
             this.heroKey = sel;
         }
 
@@ -72,7 +73,10 @@ export class Game extends Scene
         const p = this.registry.get('path');
         this.path = typeof p === 'string' ? p : '';
 
-        this.applyHeroStats();
+        const stats = HeroStatsService.getStats(this.heroKey);
+        this.speedX = stats.speedX;
+        this.jumpV = stats.jumpV;
+        this.lives = stats.lives;
 
         // Continuidad de puntuación/vidas después de aplicar stats base
         const carryScore = this.registry.get('carryScore');
@@ -86,18 +90,28 @@ export class Game extends Scene
         // Crear jugador
         this.createPlayer();
         
+        // Inicializar grupos
+        this.enemies = this.physics.add.group();
+        this.coins = this.physics.add.group();
+        this.powerUps = this.physics.add.group();
+
         // Crear enemigos
-        this.createEnemies();
+        const enemySpawner = new EnemySpawner();
+        enemySpawner.spawn(this, this.enemies, this.levelIndex, this.getPathChoice());
         
         // Crear monedas
-        this.createCoins();
+        const coinSpawner = new CoinSpawner();
+        coinSpawner.spawn(this, this.coins, this.levelIndex, this.getPathChoice());
+        this.totalCoins = this.coins.getChildren().length;
 
         // Crear power-ups
-        this.createPowerUps();
+        const powerUpSpawner = new PowerUpSpawner();
+        powerUpSpawner.spawn(this, this.powerUps);
 
         // Jefe en nivel 3
         if (this.levelIndex >= 3) {
-            this.spawnBoss();
+            this.bossCtrl = new BossController(this);
+            this.bossCtrl.start(this.platforms, this.player);
         }
         
         // Configurar controles (flechas + WASD) y capturas de teclado
@@ -111,10 +125,21 @@ export class Game extends Scene
         };
         
         // Crear UI
-        this.createUI();
+        this.hud = new Hud(this, this.score, this.lives, this.totalCoins);
+        // Texto de héroe y stats (arriba derecha)
+        const heroLabel = HeroStatsService.getLabel(this.heroKey);
+        const statsTxt = `VEL ${this.speedX} | SALTO ${Math.abs(this.jumpV)} | VIDAS ${this.lives}`;
+        this.add.text(1024 - 16, 16, `Nivel: ${this.levelIndex}\nHéroe: ${heroLabel}\n${statsTxt}`, {
+            fontSize: '20px',
+            color: '#000',
+            align: 'right'
+        }).setOrigin(1, 0);
         
         // Configurar física
         this.setupPhysics();
+
+        // Bridge boss controller overlap back to scene logic
+        this.events.on('boss-hit-player', () => this.hitEnemy(this.player, null));
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -138,139 +163,14 @@ export class Game extends Scene
 
     createPlayer()
     {
-        const sheet = this.sheetKeyFromHero(this.heroKey);
+        const sheet = HeroStatsService.getSheetKey(this.heroKey);
         this.player = this.physics.add.sprite(100, 700, sheet, 0);
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
         this.player.setScale(1);
     }
 
-    private sheetKeyFromHero(key: string): string
-    {
-        if (key === 'hero_speed') return 'hero_speed_sheet';
-        if (key === 'hero_tank') return 'hero_tank_sheet';
-        return 'hero_jump_sheet';
-    }
-
-    applyHeroStats()
-    {
-        // Defaults
-        this.speedX = 300;
-        this.jumpV = -600;
-        this.lives = 3;
-
-        switch (this.heroKey) {
-            case 'hero_speed':
-                this.speedX = 420;
-                this.jumpV = -600;
-                this.lives = 2;
-                break;
-            case 'hero_jump':
-                this.speedX = 300;
-                this.jumpV = -750;
-                this.lives = 3;
-                break;
-            case 'hero_tank':
-                this.speedX = 250;
-                this.jumpV = -600;
-                this.lives = 4;
-                break;
-        }
-    }
-
-    createEnemies()
-    {
-        this.enemies = this.physics.add.group();
-        const choice = this.getPathChoice();
-        let enemyPositions: { x: number; y: number }[] = [];
-        if (this.levelIndex === 1) {
-            enemyPositions = [ { x: 500, y: 500 }, { x: 800, y: 400 }, { x: 200, y: 300 }, { x: 600, y: 200 } ];
-        } else if (this.levelIndex === 2) {
-            enemyPositions = choice === 'A'
-                ? [ { x: 300, y: 520 }, { x: 700, y: 420 } ]
-                : [ { x: 200, y: 480 }, { x: 850, y: 280 }, { x: 500, y: 360 } ];
-        } else {
-            enemyPositions = choice === 'A'
-                ? [ { x: 250, y: 500 }, { x: 750, y: 300 } ]
-                : [ { x: 400, y: 520 }, { x: 900, y: 380 } ];
-        }
-
-        enemyPositions.forEach((pos, idx) => {
-            // Alterna verde/rojo para variedad
-            const key = (idx % 2 === 0) ? 'goblin_green_sheet' : 'goblin_red_sheet';
-            const gob = this.enemies.create(pos.x, pos.y, key, 0) as Phaser.Physics.Arcade.Sprite;
-
-            gob.setBounce(1).setCollideWorldBounds(true);
-            gob.setVelocity(Phaser.Math.Between(-200, 200), 0);
-            gob.setScale(1.5); // Aumentar escala
-
-            // Caja un pelín más estrecha que el 32x32
-            gob.body!.setSize(20, 26).setOffset(6, 6);
-
-            gob.play('goblin_run');
-        });
-    }
-
-    createCoins()
-    {
-        this.coins = this.physics.add.group();
-        const choice = this.getPathChoice();
-        let coins: { x: number; y: number }[] = [];
-        if (this.levelIndex === 1) {
-            coins = [ { x: 250, y: 600 }, { x: 550, y: 500 }, { x: 850, y: 400 }, { x: 250, y: 300 }, { x: 650, y: 200 }, { x: 150, y: 100 }, { x: 950, y: 100 }, { x: 512, y: 50 } ];
-        } else if (this.levelIndex === 2) {
-            coins = choice === 'A'
-                ? [ { x: 200, y: 600 }, { x: 400, y: 520 }, { x: 680, y: 420 }, { x: 820, y: 320 }, { x: 512, y: 240 }, { x: 150, y: 180 }, { x: 900, y: 180 }, { x: 512, y: 80 } ]
-                : [ { x: 300, y: 580 }, { x: 520, y: 520 }, { x: 740, y: 460 }, { x: 900, y: 360 }, { x: 620, y: 260 }, { x: 420, y: 200 }, { x: 200, y: 160 }, { x: 850, y: 120 } ];
-        } else {
-            coins = choice === 'A'
-                ? [ { x: 250, y: 560 }, { x: 500, y: 460 }, { x: 750, y: 360 }, { x: 300, y: 260 }, { x: 600, y: 160 }, { x: 900, y: 160 }, { x: 150, y: 120 }, { x: 512, y: 80 } ]
-                : [ { x: 200, y: 600 }, { x: 450, y: 520 }, { x: 700, y: 420 }, { x: 900, y: 300 }, { x: 550, y: 220 }, { x: 300, y: 180 }, { x: 150, y: 140 }, { x: 512, y: 100 } ];
-        }
-        
-        coins.forEach((pos) => {
-            const coin = this.coins.create(pos.x, pos.y, 'coin_sheet', 0) as Phaser.Physics.Arcade.Sprite;
-            coin.play('coin_spin');
-            coin.setScale(1); // 24x24 nativo
-            // Monedas sin gravedad y sin movimiento físico; no atraviesan ni rebotan
-            coin.body!.setAllowGravity(false);
-            coin.setImmovable(true);
-            coin.setBounce(0);
-            coin.body!.setSize(20, 20).setOffset(2, 2);
-            // Bob leve solo hacia arriba, sin bajar del punto base
-            this.tweens.add({ targets: coin, y: pos.y - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
-        });
-    }
-
-    createUI()
-    {
-        this.scoreText = this.add.text(16, 16, 'Puntuación: 0', {
-            fontSize: '32px',
-            color: '#000'
-        });
-        if (this.score > 0) {
-            this.scoreText.setText('Puntuación: ' + this.score);
-        }
-        
-        this.livesText = this.add.text(16, 60, 'Vidas: ' + this.lives, {
-            fontSize: '32px',
-            color: '#000'
-        });
-        
-        this.coinsText = this.add.text(16, 104, 'Monedas: 8/8', {
-            fontSize: '32px',
-            color: '#000'
-        });
-
-        // Texto de héroe y stats (arriba derecha)
-        const heroLabel = this.heroKey === 'hero_speed' ? 'Velocidad' : this.heroKey === 'hero_tank' ? 'Tanque' : 'Salto';
-        const stats = `VEL ${this.speedX} | SALTO ${Math.abs(this.jumpV)} | VIDAS ${this.lives}`;
-        this.add.text(1024 - 16, 16, `Nivel: ${this.levelIndex}\nHéroe: ${heroLabel}\n${stats}`, {
-            fontSize: '20px',
-            color: '#000',
-            align: 'right'
-        }).setOrigin(1, 0);
-    }
+    
 
     setupPhysics()
     {
@@ -294,9 +194,10 @@ export class Game extends Scene
         this.physics.add.overlap(this.player, this.powerUps, this.collectPowerUp, undefined, this);
 
         // Proyectiles del jefe
-        if (this.projectiles) {
-            this.physics.add.overlap(this.player, this.projectiles, this.hitEnemy, undefined, this);
-            this.physics.add.collider(this.projectiles, this.platforms, (proj: any) => proj.destroy());
+        if (this.bossCtrl?.getProjectiles()) {
+            const projs = this.bossCtrl.getProjectiles()!;
+            this.physics.add.overlap(this.player, projs, this.hitEnemy, undefined, this);
+            this.physics.add.collider(projs, this.platforms, (proj: any) => proj.destroy());
         }
     }
 
@@ -377,7 +278,7 @@ export class Game extends Scene
 
             // Bonus por completar el nivel
             this.score += 100;
-            this.scoreText.setText('Puntuación: ' + this.score);
+            this.hud.updateScore(this.score);
 
             if (this.levelIndex >= 3)
             {
@@ -396,7 +297,10 @@ export class Game extends Scene
                 Sfx.win(this);
                 this.add.text(512, 120, 'Elige una puerta', { fontSize: '40px', color: '#ffff00', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
                 // Retrasar un frame para asegurar que colisionadores/plataformas estén listos
-                this.time.delayedCall(50, () => this.spawnDoors());
+                this.time.delayedCall(50, () => {
+                    if (!this.doorCtrl) this.doorCtrl = new DoorController(this);
+                    this.doorCtrl.spawn(this.player, this.platforms, this.levelIndex, this.getPathChoice(), (choice) => this.enterDoor(choice));
+                });
             }
         }
     }
@@ -427,7 +331,7 @@ export class Game extends Scene
         switch (type) {
             case 'life':
                 this.lives += 1;
-                this.livesText.setText('Vidas: ' + this.lives);
+                this.hud.updateLives(this.lives);
                 this.floatText(pu.x, pu.y, '+1 Vida', '#2ecc71');
                 break;
             case 'speed':
@@ -568,11 +472,12 @@ export class Game extends Scene
         
         coin.disableBody(true, true);
         this.score += 10;
-        this.scoreText.setText('Puntuación: ' + this.score);
+        this.hud.updateScore(this.score);
         
         // Actualizar contador de monedas
         const coinsRemaining = this.coins.countActive(true);
-        this.coinsText.setText(`Monedas: ${coinsRemaining}/8`);
+        const collected = this.totalCoins - coinsRemaining;
+        this.hud.updateCoins(collected, this.totalCoins);
 
         Sfx.coin(this);
 
@@ -606,7 +511,7 @@ export class Game extends Scene
         });
         
         this.lives--;
-        this.livesText.setText('Vidas: ' + this.lives);
+        this.hud.updateLives(this.lives);
         
         if (this.lives <= 0)
         {
@@ -700,58 +605,6 @@ export class Game extends Scene
         this.platforms.create(300, 180, 'platform').setScale(1.5, 1).refreshBody();
     }
 
-    private spawnDoors() {
-        // Evitar duplicados si ya existen
-        if (this.doors && this.doors.getChildren().length > 0) return;
-        this.doors = this.physics.add.staticGroup();
-
-        const choice = this.getPathChoice();
-        const [xA, xB] = this.getDoorXs(this.levelIndex, choice);
-        const yA = this.getDoorYForX(xA);
-        const yB = this.getDoorYForX(xB);
-
-        const doorA = this.doors.create(xA, yA, 'door') as Phaser.Physics.Arcade.Image;
-        const doorB = this.doors.create(xB, yB, 'door') as Phaser.Physics.Arcade.Image;
-        doorA.setDepth(80);
-        doorB.setDepth(80);
-
-        // Glow + flecha
-        const glowA = this.add.image(xA, yA - 10, 'door_glow').setDepth(70).setAlpha(0.7);
-        glowA.setBlendMode(Phaser.BlendModes.ADD);
-        const glowB = this.add.image(xB, yB - 10, 'door_glow').setDepth(70).setAlpha(0.7);
-        glowB.setBlendMode(Phaser.BlendModes.ADD);
-        this.tweens.add({ targets: [glowA, glowB], alpha: 0.4, yoyo: true, repeat: -1, duration: 700 });
-
-        const arrowA = this.add.image(xA, yA - 40, 'door_arrow').setDepth(90);
-        const arrowB = this.add.image(xB, yB - 40, 'door_arrow').setDepth(90);
-        this.tweens.add({ targets: [arrowA, arrowB], y: '+=8', yoyo: true, repeat: -1, duration: 500, ease: 'Sine.easeInOut' });
-
-        this.physics.add.overlap(this.player, doorA, () => this.enterDoor('A'));
-        this.physics.add.overlap(this.player, doorB, () => this.enterDoor('B'));
-    }
-
-    private getDoorXs(level: number, choice: 'A' | 'B'): [number, number] {
-        if (level === 1) return [100, 900];
-        if (level === 2) return choice === 'A' ? [420, 820] : [520, 900];
-        return [300, 740];
-    }
-
-    private getDoorYForX(x: number): number {
-        let y = 420; // fallback visible
-        const children = this.platforms.getChildren() as any[];
-        children.forEach((obj: any) => {
-            if (!obj || typeof obj.x !== 'number' || typeof obj.y !== 'number') return;
-            const w = (obj.displayWidth ?? 100);
-            const h = (obj.displayHeight ?? 20);
-            const halfW = w / 2;
-            if (x >= obj.x - halfW && x <= obj.x + halfW) {
-                const top = obj.y - h / 2;
-                const candidate = top - 24; // center of 48px door
-                if (candidate < y) y = candidate;
-            }
-        });
-        return y;
-    }
 
     private enterDoor(choice: 'A' | 'B') {
         if (!this.levelComplete) return;
@@ -763,49 +616,5 @@ export class Game extends Scene
         this.registry.set('carryLives', this.lives);
         this.scene.restart();
     }
-
-    private spawnBoss() {
-        const boss = this.physics.add.sprite(700, 300, 'boss_troll_sheet', 0) as Phaser.Physics.Arcade.Sprite;
-        this.boss = boss as any;
-        boss.setImmovable(true).setCollideWorldBounds(true);
-        boss.setScale(1.2); // Escala ligeramente reducida para el troll (es más grande)
-        this.physics.add.collider(boss, this.platforms);
-        this.physics.add.overlap(this.player, boss, this.hitEnemy, undefined, this);
-        boss.play('troll_idle');
-
-        this.projectiles = this.physics.add.group();
-
-        // Disparo cada 1.5s con anim de casteo
-        this.shootTimer = this.time.addEvent({
-            delay: 1500, loop: true, callback: () => {
-                if (!this.boss) return;
-                boss.play('troll_cast');
-                // Lanza el proyectil cuando termina el cast
-                boss.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                    if (!this.boss) return;
-                    const proj = this.projectiles!.create(boss.x, boss.y, 'projectile') as Phaser.Physics.Arcade.Image;
-                    const angle = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
-                    const speed = 220;
-                    proj.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-                    boss.play('troll_idle'); // vuelta a idle
-                });
-            }
-        });
-
-        // Teletransporte cada 4s con anim portal
-        this.teleportTimer = this.time.addEvent({
-            delay: 4000, loop: true, callback: () => {
-                if (!this.boss) return;
-                boss.play('troll_portal');
-                boss.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                    if (!this.boss) return;
-                    const spots = [ {x: 250, y: 300}, {x: 750, y: 260}, {x: 500, y: 200} ];
-                    const s = Phaser.Utils.Array.GetRandom(spots);
-                    boss.setPosition(s.x, s.y);
-                    this.cameras.main.flash(150, 255, 255, 255);
-                    boss.play('troll_idle');
-                });
-            }
-        });
-    }
+    
 }
