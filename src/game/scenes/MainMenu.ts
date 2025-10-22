@@ -59,6 +59,17 @@ export class MainMenu extends Scene
             this.changeScene();
         });
 
+        // DEV: acceso rápido al selector de nivel
+        if (import.meta.env.DEV) {
+            this.add.text(16, 740, 'DEV: Seleccionar nivel', {
+                fontFamily: 'Arial', fontSize: 20, color: '#00ff00', stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0, 1).setDepth(100).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                Sfx.click(this);
+                this.scene.start('LevelSelectDev');
+            });
+        }
+
         EventBus.emit('current-scene-ready', this);
     }
     

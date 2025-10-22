@@ -101,7 +101,7 @@ export class Game extends Scene
         
         // Crear monedas
         const coinSpawner = new CoinSpawner();
-        coinSpawner.spawn(this, this.coins, this.levelIndex, this.getPathChoice());
+        coinSpawner.spawn(this, this.coins, this.levelIndex, this.getPathChoice(), this.platforms);
         this.totalCoins = this.coins.getChildren().length;
 
         // Crear power-ups

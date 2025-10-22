@@ -1,11 +1,13 @@
 import { Scene } from 'phaser';
+import { getTopYForX } from '../utils/PlatformUtils';
 
 export class CoinSpawner {
   spawn(
     scene: Scene,
     group: Phaser.Physics.Arcade.Group,
     levelIndex: number,
-    pathChoice: 'A' | 'B'
+    pathChoice: 'A' | 'B',
+    platforms: Phaser.Physics.Arcade.StaticGroup
   ): void {
     let coins: { x: number; y: number }[] = [];
     if (levelIndex === 1) {
@@ -41,14 +43,16 @@ export class CoinSpawner {
     }
 
     coins.forEach((pos) => {
-      const coin = group.create(pos.x, pos.y, 'coin_sheet', 0) as Phaser.Physics.Arcade.Sprite;
+      const platformTop = getTopYForX(platforms, pos.x);
+      const spawnY = Math.min(pos.y, platformTop - 24); // clampa sobre plataforma
+      const coin = group.create(pos.x, spawnY, 'coin_sheet', 0) as Phaser.Physics.Arcade.Sprite;
       coin.play('coin_spin');
       coin.setScale(1);
       (coin.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
       coin.setImmovable(true);
       coin.setBounce(0);
       coin.body!.setSize(20, 20).setOffset(2, 2);
-      scene.tweens.add({ targets: coin, y: pos.y - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
+      scene.tweens.add({ targets: coin, y: spawnY - 2, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
     });
   }
 }
